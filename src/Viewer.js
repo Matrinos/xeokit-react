@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Viewer, BCFViewpointsPlugin, NavCubePlugin } from '@xeokit/xeokit-sdk';
+import { BCFViewpointsPlugin, NavCubePlugin, Viewer } from '@xeokit/xeokit-sdk';
 import difference from 'lodash.difference';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
 
 export const makeViewer = (LoaderPlugin) => {
   class ModelViewer extends Component {
