@@ -16,8 +16,10 @@ jobs:
         with:
           node-version: 14
       - run: cd src
-      - run: yarn build
-      - run: cp package.json build/
+      - working-directory: src
+        run: |
+          yarn build
+          cp ../package.json build/
 
   publish-gpr:
     needs: build
@@ -32,5 +34,7 @@ jobs:
           node-version: 14
           registry-url: https://npm.pkg.github.com/
       - run: pwd
+      - run: ls
+      - run: ls src
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
