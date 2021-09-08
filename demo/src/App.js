@@ -66,7 +66,7 @@ const App = () => (
       <div className="card-header">Feature</div>
       <div className="card-body">
         <h4 className="card-title mb-5">Open/close viewer</h4>
-        {/* <ConditionalRender /> */}
+        <ConditionalRender />
       </div>
     </div>
   </div>

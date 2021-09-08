@@ -36,10 +36,11 @@
     "webpack-cli": "^4.8.0"
   },
   "peerDependencies": {
-    "react": "^17.0.0",
-    "xeokit-sdk": "github:xeokit/xeokit-sdk"
+    "@xeokit/xeokit-sdk": "^2.0.0-beta.21",
+    "react": "^17.0.0"
   },
   "dependencies": {
+    "@xeokit/xeokit-sdk": "^2.0.0-beta.21",
     "lodash.difference": "^4.5.0",
     "prop-types": "^15.7.2"
   },

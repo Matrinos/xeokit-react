@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Viewer } from 'xeokit-sdk/src/viewer/Viewer';
-import { BCFViewpointsPlugin } from 'xeokit-sdk/src/plugins/BCFViewpointsPlugin/BCFViewpointsPlugin';
-import { NavCubePlugin } from 'xeokit-sdk/src/plugins/NavCubePlugin/NavCubePlugin';
+import { Viewer, BCFViewpointsPlugin, NavCubePlugin } from '@xeokit/xeokit-sdk';
 import difference from 'lodash.difference';
 
 export const makeViewer = (LoaderPlugin) => {
@@ -45,7 +43,7 @@ export const makeViewer = (LoaderPlugin) => {
         const toAdd = difference(currentProps.models, prevProps.models);
         const toRemove = difference(prevProps.models, currentProps.models);
 
-        const perfModels = toAdd.map(el => this.modelLoader.load(el));
+        const perfModels = toAdd.map((el) => this.modelLoader.load(el));
 
         if (currentProps.bcfViewpoint) this.setBCFViewpoints(perfModels);
 
@@ -106,17 +104,19 @@ export const makeViewer = (LoaderPlugin) => {
       // we have to wrap each model loaded event with a promise
       // on the load event we immediately call the resolve function
       const promises = models.map(
-        model => new Promise(resolve => model.on('loaded', resolve)),
+        (model) => new Promise((resolve) => model.on('loaded', resolve)),
       );
 
       // once all the models have been loaded and thus all the promises
       // have been resolved, we can finally load our viewpoint
-      Promise.all(promises).then(() => this.BCFViewpointsPlugin.setViewpoint(bcfViewpoint));
+      Promise.all(promises).then(() =>
+        this.BCFViewpointsPlugin.setViewpoint(bcfViewpoint),
+      );
     }
 
     loadModels() {
       const { models } = this.props;
-      return models.map(model => this.modelLoader.load(model));
+      return models.map((model) => this.modelLoader.load(model));
     }
 
     // We store the plugins on the component instance too for the
@@ -191,13 +191,8 @@ export const makeViewer = (LoaderPlugin) => {
     }
 
     render() {
-      const {
-        canvasID,
-        width,
-        height,
-        navCubeSettings,
-        enableScreenshot,
-      } = this.props;
+      const { canvasID, width, height, navCubeSettings, enableScreenshot } =
+        this.props;
       return (
         <div>
           <canvas

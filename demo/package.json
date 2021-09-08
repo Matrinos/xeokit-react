@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
-    "react-scripts": "3.0.1"
+    "react-scripts": "4.0.3"
   },
   "dependencies": {
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "xeokit-react": "file:../src",
-    "xeokit-sdk": "github:xeokit/xeokit-sdk"
+    "@xeokit/xeokit-sdk": "^2.0.0-beta.21",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "xeokit-react": "file:../src"
   },
   "scripts": {
     "start": "react-scripts start",

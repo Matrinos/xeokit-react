@@ -1,7 +1,9 @@
 /* eslint-disable import/order */
 import { makeViewer } from './Viewer';
-import { GLTFLoaderPlugin } from 'xeokit-sdk/src/plugins/GLTFLoaderPlugin/GLTFLoaderPlugin';
-import { XKTLoaderPlugin } from 'xeokit-sdk/src/plugins/XKTLoaderPlugin/XKTLoaderPlugin';
+import {
+  GLTFLoaderPlugin,
+  XKTLoaderPlugin,
+} from '@xeokit/xeokit-sdk';
 
 export const GLTFViewer = makeViewer(GLTFLoaderPlugin);
 export const XKTViewer = makeViewer(XKTLoaderPlugin);
