@@ -1,5 +1,5 @@
 {
-  "name": "xeokit-react",
+  "name": "@matrinos/xeokit-react",
   "version": "0.1.0",
   "description": "",
   "main": "build/xeokit-react.js",
