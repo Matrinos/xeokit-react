@@ -2,6 +2,9 @@ declare module '@matrinos/xeokit-react' {
   interface Model {
     id: string;
     src: string;
+    metaModelSrc?: string;
+    performance?: boolean;
+    edges?: boolean;
   }
 
   interface NavCubeSettingsItem {
