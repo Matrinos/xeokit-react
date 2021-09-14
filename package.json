@@ -44,5 +44,8 @@
   },
   "resolutions": {
     "styled-components": "^5"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
