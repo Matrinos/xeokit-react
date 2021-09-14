@@ -1,6 +1,6 @@
 {
   "name": "@matrinos/xeokit-react",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "module": "dist/index",
   "types": "dist/index.d.ts",
   "scripts": {
