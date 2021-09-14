@@ -23,7 +23,6 @@ jobs:
         run: |
           yarn
           yarn build
-          cp index.d.ts build
           npm publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
