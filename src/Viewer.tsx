@@ -52,7 +52,7 @@ export interface BCFViewpointsJSON {
   };
   components?: {
     visibility?: {
-      default_visibility?: false;
+      default_visibility?: boolean;
       exceptions: {
         ifc_guid?: string;
         originating_system?: string;
