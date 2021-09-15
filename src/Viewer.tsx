@@ -9,7 +9,7 @@ import {
 } from '@xeokit/xeokit-sdk';
 import { Camera } from '@xeokit/xeokit-sdk/viewer/scene/camera/Camera';
 import { forEach } from 'lodash';
-import { FC, useCallback, useEffect, useRef } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 
 interface Model {
   id: string;
@@ -27,18 +27,56 @@ interface NavCubeSettingsItem {
 
 type Colorize = [number, number, number]; // [r, g, b]
 
+interface Point3D {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface BCFViewpointsJSON {
+  perspective_camera?: {
+    camera_view_point?: Point3D;
+    camera_direction?: Point3D;
+    camera_up_vector?: Point3D;
+    field_of_view?: number;
+  };
+  lines?: [];
+  clipping_planes?: {
+    location?: Point3D;
+    direction?: Point3D;
+  }[];
+  bitmaps?: [];
+  snapshot?: {
+    snapshot_type?: string;
+    snapshot_data?: string;
+  };
+  components?: {
+    visibility?: {
+      default_visibility?: false;
+      exceptions: {
+        ifc_guid?: string;
+        originating_system?: string;
+        authoring_tool_id?: string;
+      }[];
+    };
+    selection?: {
+      ifc_guid?: string;
+    }[];
+  };
+}
+
 export interface ViewerProps {
   canvasID: string;
   width: number;
   height: number;
   camera?: Camera;
   models: Model[];
-  bcfViewpoint?: BCFViewpointsPlugin;
+  bcfViewpoint?: BCFViewpointsJSON;
   eventToPickOn?: string;
   navCubeSettings?: NavCubeSettingsItem;
-  enableScreenshot?: boolean;
   components?: any[];
   plugins?: any[];
+  isDev?: boolean;
 }
 
 interface ModelEntity extends Entity {
@@ -57,10 +95,11 @@ export const makeViewer = (
     bcfViewpoint,
     eventToPickOn = 'mouseclicked',
     navCubeSettings,
-    enableScreenshot,
     plugins,
     components,
+    isDev = false,
   }) => {
+    const [isDevPanelVisible, setIsDevPanelVisible] = useState(false);
     const bimCanvas = useRef<HTMLCanvasElement>(null);
     const viewer = useRef<Viewer>();
     const modelLoader = useRef<InstanceType<typeof LoaderPlugin>>();
@@ -107,7 +146,7 @@ export const makeViewer = (
           new component.component(viewerObj.scene, ...restArgs);
         });
 
-         new TreeViewPlugin(viewerObj, {
+        new TreeViewPlugin(viewerObj, {
           containerElement: document.getElementById('treeViewContainer'),
         });
       },
@@ -162,6 +201,10 @@ export const makeViewer = (
       setUpViewer,
     ]);
 
+    const toggleDevPanel = useCallback(() => {
+      setIsDevPanelVisible((prev) => !prev);
+    }, []);
+
     const takeScreenshot = useCallback(() => {
       const imageData = viewer.current?.getSnapshot({
         format: 'png',
@@ -174,6 +217,25 @@ export const makeViewer = (
         link.click();
       }
     }, [viewer]);
+
+    const downloadBCF = useCallback(() => {
+      const viewpoint = bcfViewpointsPlugin.current?.getViewpoint({
+        // Options
+        spacesVisible: false, // Don't force IfcSpace types visible in viewpoint (default)
+        spaceBoundariesVisible: false, // Don't show IfcSpace boundaries in viewpoint (default)
+        openingsVisible: false, // Don't force IfcOpening types visible in viewpoint (default)
+      });
+
+      const viewpointStr = JSON.stringify(viewpoint, null, 2);
+
+      const link = document.createElement('a');
+      link.setAttribute(
+        'href',
+        'data:text/plain;charset=utf-8,' + encodeURIComponent(viewpointStr),
+      );
+      link.setAttribute('download', 'bcfViewpoint.json');
+      link.click();
+    }, []);
 
     return (
       <Container width={width} height={height}>
@@ -190,39 +252,28 @@ export const makeViewer = (
             height={navCubeSettings.canvasHeight}
           />
         ) : null}
-        {enableScreenshot ? (
-          <button
-            type="button"
-            id="take-screenshot"
-            className="btn btn-primary"
-            onClick={takeScreenshot}
-          >
-            Take Screenshot
-          </button>
-        ) : null}
-        <TreeViewContainer id="treeViewContainer" />
-        <button
-          onClick={() => {
-            const viewpoint = bcfViewpointsPlugin.current?.getViewpoint({
-              // Options
-              spacesVisible: false, // Don't force IfcSpace types visible in viewpoint (default)
-              spaceBoundariesVisible: false, // Don't show IfcSpace boundaries in viewpoint (default)
-              openingsVisible: false, // Don't force IfcOpening types visible in viewpoint (default)
-            });
 
-            const viewpointStr = JSON.stringify(viewpoint, null, 2);
-
-            const link = document.createElement('a');
-            link.setAttribute(
-              'href',
-              'data:text/plain;charset=utf-8,' + encodeURIComponent(viewpointStr),
-            );
-            link.setAttribute('download', 'bcfViewpoint.json');
-            link.click();
-          }}
-        >
-          download bcf
-        </button>
+        {isDev && (
+          <>
+            <DevPanel isDevPanelVisible={isDevPanelVisible}>
+              <TreeViewContainer id="treeViewContainer" />
+              <div>
+                <button
+                  type="button"
+                  id="take-screenshot"
+                  className="btn btn-primary"
+                  onClick={takeScreenshot}
+                >
+                  Take Screenshot
+                </button>
+                <button onClick={downloadBCF}>download bcf</button>
+              </div>
+            </DevPanel>
+            <button onClick={toggleDevPanel} style={{ position: 'absolute', left: 10, top: 10 }}>
+              {isDevPanelVisible ? '乂' : '三'}
+            </button>
+          </>
+        )}
       </Container>
     );
   };
@@ -230,11 +281,40 @@ export const makeViewer = (
   return ModelViewer;
 };
 
-const TreeViewContainer = styled.div`
+const DevPanel = styled.div<{ isDevPanelVisible: boolean }>`
   position: absolute;
   left: 0;
   top: 0;
-  background: #fff5;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff9;
+  backdrop-filter: blur(15px);
+  opacity: ${({ isDevPanelVisible }) => (isDevPanelVisible ? 1 : 0)};
+  margin-left: ${({ isDevPanelVisible }) => (isDevPanelVisible ? 0 : -500)}px;
+  transition: all 0.5s ease-in-out;
+  padding: 30px 10px 10px 10px;
+  box-sizing: border-box;
+`;
+
+const TreeViewContainer = styled.div`
+  flex: 1;
+  overflow: auto;
+  width: 400px;
+  ::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  a.plus,
+  a.minus {
+    width: 10px;
+    display: inline-block;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0 0 0 20px;
+  }
 `;
 
 const Container = styled.div<{
@@ -242,8 +322,9 @@ const Container = styled.div<{
   height: number;
 }>`
   display: block;
-  width: ${({ width }) => width};
-  height: ${({ height }) => height};
+  width: ${({ width }) => width}px;
+  height: ${({ height }) => height}px;
   position: relative;
   background: linear-gradient(rgb(39, 120, 187), rgb(151, 193, 219));
+  overflow: hidden;
 `;

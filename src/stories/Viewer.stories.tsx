@@ -11,15 +11,7 @@ export default {
 } as ComponentMeta<typeof XKTViewer>;
 
 const Template: ComponentStory<typeof XKTViewer> = (args) => {
-  return (
-    <div
-      style={{
-        border: '1px solid black',
-      }}
-    >
-      <XKTViewer {...args} />
-    </div>
-  );
+  return <XKTViewer {...args} />;
 };
 
 export const Primary = Template.bind({});
@@ -56,4 +48,5 @@ Primary.args = {
     canvasHeight: 200,
   },
   enableScreenshot: true,
+  isDev: false,
 };
