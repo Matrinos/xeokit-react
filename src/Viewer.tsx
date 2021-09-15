@@ -39,16 +39,19 @@ export interface BCFViewpointsJSON {
     camera_direction?: Point3D;
     camera_up_vector?: Point3D;
     field_of_view?: number;
+    [key: string]: unknown;
   };
-  lines?: [];
+  lines?: unknown[];
   clipping_planes?: {
     location?: Point3D;
     direction?: Point3D;
+    [key: string]: unknown;
   }[];
-  bitmaps?: [];
+  bitmaps?: unknown[];
   snapshot?: {
     snapshot_type?: string;
     snapshot_data?: string;
+    [key: string]: unknown;
   };
   components?: {
     visibility?: {
@@ -57,11 +60,21 @@ export interface BCFViewpointsJSON {
         ifc_guid?: string;
         originating_system?: string;
         authoring_tool_id?: string;
+        [key: string]: unknown;
       }[];
+      view_setup_hints?: {
+        spaces_visible?: boolean;
+        space_boundaries_visible?: boolean;
+        openings_visible?: boolean;
+        [key: string]: unknown;
+      };
+      [key: string]: unknown;
     };
     selection?: {
       ifc_guid?: string;
+      [key: string]: unknown;
     }[];
+    [key: string]: unknown;
   };
 }
 
