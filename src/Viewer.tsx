@@ -1,11 +1,18 @@
 import styled from '@emotion/styled';
+import { IconButton } from '@material-ui/core';
+import CloseIcon from '@material-ui/icons/Close';
+import MenuIcon from '@material-ui/icons/Menu';
+import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
+import SaveIcon from '@material-ui/icons/Save';
 import {
   BCFViewpointsPlugin,
+  Entity,
+  FastNavPlugin,
   GLTFLoaderPlugin,
+  StoreyViewsPlugin,
   TreeViewPlugin,
   Viewer,
   XKTLoaderPlugin,
-  Entity,
 } from '@xeokit/xeokit-sdk';
 import { Camera } from '@xeokit/xeokit-sdk/viewer/scene/camera/Camera';
 import { forEach } from 'lodash';
@@ -117,14 +124,79 @@ export const makeViewer = (
     const viewer = useRef<Viewer>();
     const modelLoader = useRef<InstanceType<typeof LoaderPlugin>>();
     const bcfViewpointsPlugin = useRef<BCFViewpointsPlugin>();
+    const storeyViewsPlugin = useRef<StoreyViewsPlugin>();
     const setUpViewer = useCallback(() => {
       viewer.current = new Viewer({
         canvasId: canvasID,
         saoEnabled: false,
       });
-      viewer.current.on;
-      modelLoader.current = new LoaderPlugin(viewer.current);
-      bcfViewpointsPlugin.current = new BCFViewpointsPlugin(viewer.current);
+      // viewer.current.on;
+
+      // new AmbientLight(viewer.current.scene, {
+      //   color: [0.0, 0.3, 0.7],
+      //   intensity: 0.5,
+      // });
+
+      // new DirLight(viewer.current.scene, {
+      //   id: 'keyLight',
+      //   dir: [0.8, -0.6, -0.8],
+      //   color: [0.5, 0.5, 0.5],
+      //   intensity: 0.5,
+      //   space: 'view',
+      // });
+
+      modelLoader.current = new LoaderPlugin(viewer.current, {
+        objectDefaults: {
+          IfcOpeningElement: {
+            pickable: false,
+            visible: false,
+          },
+
+          IfcSpace: {
+            colorize: [1, 0, 0],
+            pickable: true,
+            visible: true,
+            opacity: 1,
+          },
+
+          IfcWindow: {
+            colorize: [1, 0, 0],
+            opacity: 1,
+          },
+
+          IfcPlate: {
+            colorize: [0.8470588235, 0.427450980392, 0],
+            opacity: 0.3,
+          },
+
+          DEFAULT: {},
+          // IfcSpace: {
+          //   pickable: true,
+          //   opacity: 1,
+          // },
+        },
+        maxGeometryBatchSize: 50000000,
+      });
+      new FastNavPlugin(viewer.current, {});
+
+      // const viewCullPlugin = new ViewCullPlugin(viewer.current, {
+      //   maxTreeDepth: 20,
+      // });
+
+      // console.log(modelLoader.current.supportedVersions)
+      // bcfViewpointsPlugin.current = new BCFViewpointsPlugin(viewer.current);
+
+      storeyViewsPlugin.current = new StoreyViewsPlugin(viewer.current);
+
+      storeyViewsPlugin.current.on('storeys', () => {
+        console.log(storeyViewsPlugin.current?.storeys);
+        console.log(viewer.current?.metaScene.getObjectIDsByType('IfcSpace'));
+        console.log(viewer.current?.scene.setObjectsHighlighted([], true));
+        // console.log(viewer.current?.scene.setObjectsSelected(['1Od04J4LTB1BhDUtObuFUL'], true));
+        storeyViewsPlugin.current?.showStoreyObjects('3P3Lub7Zj769ajSMElBcQ3', {
+          hideOthers: true,
+        });
+      });
     }, [canvasID]);
 
     const setCamera = useCallback(() => {
@@ -139,12 +211,21 @@ export const makeViewer = (
     const setBCFViewpoints = useCallback(() => {
       bcfViewpointsPlugin.current?.setViewpoint(bcfViewpoint);
     }, [bcfViewpoint]);
-
     const loadModels = useCallback(async () => {
-      const entities = models.map((model) => modelLoader.current?.load(model) as ModelEntity);
+      const entities = models.map((model) => {
+        const m = modelLoader.current?.load({
+          ...model,
+          edges: true,
+          performance: false,
+          excludeUnclassifiedObjects: true,
+        }) as ModelEntity;
+
+        return m;
+      });
       await Promise.all(
         entities.map((model) => new Promise((resolve) => model.on('loaded', resolve))),
       );
+      console.log(entities);
     }, [models]);
 
     const loadPlugins = useCallback(
@@ -180,6 +261,7 @@ export const makeViewer = (
         if (hit) {
           // eslint-disable-next-line no-console
           console.log(hit.entity.id);
+          console.log(hit.entity);
           if (!lastEntity || hit.entity.id !== lastEntity.id) {
             if (lastEntity) {
               lastEntity.colorize = lastColorize;
@@ -219,17 +301,30 @@ export const makeViewer = (
     }, []);
 
     const takeScreenshot = useCallback(() => {
-      const imageData = viewer.current?.getSnapshot({
-        format: 'png',
+      // const imageData = viewer.current?.getSnapshot({
+      //   format: 'png',
+      // });
+
+      // if (imageData) {
+      //   const link = document.createElement('a');
+      //   link.setAttribute('href', imageData);
+      //   link.setAttribute('download', 'model-screenshot');
+      //   link.click();
+      // }
+
+      const mp = storeyViewsPlugin.current?.createStoreyMap('3P3Lub7Zj769ajSMElBcQ3', {
+        width: 1920,
+        height: 1920,
       });
+      const imageData = mp?.imageData;
 
       if (imageData) {
         const link = document.createElement('a');
         link.setAttribute('href', imageData);
-        link.setAttribute('download', 'model-screenshot');
+        link.setAttribute('download', 'storey-map');
         link.click();
       }
-    }, [viewer]);
+    }, []);
 
     const downloadBCF = useCallback(() => {
       const viewpoint = bcfViewpointsPlugin.current?.getViewpoint({
@@ -270,21 +365,26 @@ export const makeViewer = (
           <>
             <DevPanel isDevPanelVisible={isDevPanelVisible}>
               <TreeViewContainer id="treeViewContainer" />
-              <div>
-                <button
+              <Buttons>
+                <IconButton
                   type="button"
                   id="take-screenshot"
                   className="btn btn-primary"
                   onClick={takeScreenshot}
                 >
-                  Take Screenshot
-                </button>
-                <button onClick={downloadBCF}>download bcf</button>
-              </div>
+                  <PhotoCameraIcon />
+                </IconButton>
+                <IconButton onClick={downloadBCF}>
+                  <SaveIcon />
+                </IconButton>
+              </Buttons>
             </DevPanel>
-            <button onClick={toggleDevPanel} style={{ position: 'absolute', left: 10, top: 10 }}>
-              {isDevPanelVisible ? '乂' : '三'}
-            </button>
+            <IconButton
+              onClick={toggleDevPanel}
+              style={{ position: 'absolute', left: 10, top: 10 }}
+            >
+              {isDevPanelVisible ? <CloseIcon /> : <MenuIcon />}
+            </IconButton>
           </>
         )}
       </Container>
@@ -308,6 +408,12 @@ const DevPanel = styled.div<{ isDevPanelVisible: boolean }>`
   transition: all 0.5s ease-in-out;
   padding: 30px 10px 10px 10px;
   box-sizing: border-box;
+  border-radius: 0;
+`;
+
+const Buttons = styled.div`
+  display: flex;
+  flex-direction: row;
 `;
 
 const TreeViewContainer = styled.div`
@@ -340,4 +446,22 @@ const Container = styled.div<{
   position: relative;
   background: linear-gradient(rgb(39, 120, 187), rgb(151, 193, 219));
   overflow: hidden;
+
+  /* button {
+    all: unset;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 24px;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 12px;
+    &:hover {
+      background: #0006;
+    }
+  }
+
+  button + button {
+    margin-left: 10px;
+  } */
 `;

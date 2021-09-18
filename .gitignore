@@ -7,3 +7,4 @@ dist-ssr
 models
 
 node_modules
+yarn-error.log
