@@ -128,23 +128,8 @@ export const makeViewer = (
     const setUpViewer = useCallback(() => {
       viewer.current = new Viewer({
         canvasId: canvasID,
-        saoEnabled: false,
+        saoEnabled: true,
       });
-      // viewer.current.on;
-
-      // new AmbientLight(viewer.current.scene, {
-      //   color: [0.0, 0.3, 0.7],
-      //   intensity: 0.5,
-      // });
-
-      // new DirLight(viewer.current.scene, {
-      //   id: 'keyLight',
-      //   dir: [0.8, -0.6, -0.8],
-      //   color: [0.5, 0.5, 0.5],
-      //   intensity: 0.5,
-      //   space: 'view',
-      // });
-
       modelLoader.current = new LoaderPlugin(viewer.current, {
         objectDefaults: {
           IfcOpeningElement: {
@@ -153,15 +138,15 @@ export const makeViewer = (
           },
 
           IfcSpace: {
-            colorize: [1, 0, 0],
+            colorize: [0.5, 0.5, 1],
             pickable: true,
             visible: true,
-            opacity: 1,
+            opacity: 0.3,
           },
 
           IfcWindow: {
-            colorize: [1, 0, 0],
-            opacity: 1,
+            colorize: [0.137255, 0.403922, 0.870588],
+            opacity: 0.5,
           },
 
           IfcPlate: {
@@ -186,17 +171,17 @@ export const makeViewer = (
       // console.log(modelLoader.current.supportedVersions)
       // bcfViewpointsPlugin.current = new BCFViewpointsPlugin(viewer.current);
 
-      storeyViewsPlugin.current = new StoreyViewsPlugin(viewer.current);
+      // storeyViewsPlugin.current = new StoreyViewsPlugin(viewer.current);
 
-      storeyViewsPlugin.current.on('storeys', () => {
-        console.log(storeyViewsPlugin.current?.storeys);
-        console.log(viewer.current?.metaScene.getObjectIDsByType('IfcSpace'));
-        console.log(viewer.current?.scene.setObjectsHighlighted([], true));
-        // console.log(viewer.current?.scene.setObjectsSelected(['1Od04J4LTB1BhDUtObuFUL'], true));
-        storeyViewsPlugin.current?.showStoreyObjects('3P3Lub7Zj769ajSMElBcQ3', {
-          hideOthers: true,
-        });
-      });
+      // storeyViewsPlugin.current.on('storeys', () => {
+      //   console.log(storeyViewsPlugin.current?.storeys);
+      //   console.log(viewer.current?.metaScene.getObjectIDsByType('IfcSpace'));
+      //   console.log(viewer.current?.scene.setObjectsHighlighted([], true));
+      //   // console.log(viewer.current?.scene.setObjectsSelected(['1Od04J4LTB1BhDUtObuFUL'], true));
+      //   storeyViewsPlugin.current?.showStoreyObjects('3P3Lub7Zj769ajSMElBcKl', { // B001
+      //     hideOthers: true,
+      //   });
+      // });
     }, [canvasID]);
 
     const setCamera = useCallback(() => {
@@ -329,8 +314,8 @@ export const makeViewer = (
     const downloadBCF = useCallback(() => {
       const viewpoint = bcfViewpointsPlugin.current?.getViewpoint({
         // Options
-        spacesVisible: false, // Don't force IfcSpace types visible in viewpoint (default)
-        spaceBoundariesVisible: false, // Don't show IfcSpace boundaries in viewpoint (default)
+        spacesVisible: true, // Don't force IfcSpace types visible in viewpoint (default)
+        spaceBoundariesVisible: true, // Don't show IfcSpace boundaries in viewpoint (default)
         openingsVisible: false, // Don't force IfcOpening types visible in viewpoint (default)
       });
 
