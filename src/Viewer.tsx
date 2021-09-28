@@ -225,11 +225,14 @@ export const makeViewer = (
           new component.component(viewerObj.scene, ...restArgs);
         });
 
-        new TreeViewPlugin(viewerObj, {
-          containerElement: document.getElementById('treeViewContainer'),
-        });
+        if (isDev) {
+          new TreeViewPlugin(viewerObj, {
+            containerElement: document.getElementById('treeViewContainer'),
+          });
+        }
+
       },
-      [components, plugins],
+      [components, isDev, plugins],
     );
 
     const pickEntity = useCallback(() => {

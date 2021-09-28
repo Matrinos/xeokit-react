@@ -15,6 +15,7 @@
     "outDir": "dist",
     "jsx": "react-jsx",
     "skipLibCheck": true,
+    "removeComments": true,
   },
   "include": ["./src"],
   "exclude": ["node_modules", "dist", "./src/**/*.stories.*"]
