@@ -8513,11 +8513,6 @@ react-sizeme@^3.0.1:
     shallowequal "^1.1.0"
     throttle-debounce "^3.0.1"
 
-react-stats@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/react-stats/-/react-stats-0.0.5.tgz#7fc7942799ad94369a54b674059f645df40ab00f"
-  integrity sha1-f8eUJ5mtlDaaVLZ0BZ9kXfQKsA8=
-
 react-syntax-highlighter@^13.5.3:
   version "13.5.3"
   resolved "https://registry.yarnpkg.com/react-syntax-highlighter/-/react-syntax-highlighter-13.5.3.tgz#9712850f883a3e19eb858cf93fad7bb357eea9c6"
