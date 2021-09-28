@@ -1,9 +1,9 @@
 import styled from '@emotion/styled';
-import { IconButton } from '@material-ui/core';
-import CloseIcon from '@material-ui/icons/Close';
-import MenuIcon from '@material-ui/icons/Menu';
-import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
-import SaveIcon from '@material-ui/icons/Save';
+import { IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import MenuIcon from '@mui/icons-material/Menu';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import SaveIcon from '@mui/icons-material/Save';
 import {
   BCFViewpointsPlugin,
   Entity,
