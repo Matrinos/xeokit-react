@@ -24,7 +24,10 @@ const get2dFrom3d = (w: number, h: number, cameraMatrix: number[], point: number
   const x = math.transformPoint4(cameraMatrix, [...point, 1]);
   // console.log('aabb2', math.AABB2ToCanvas(aabb, 600,600))
 
-  return [-((x[0] / x[2] / x[3]) * w) / 2 * 0.865 + w / 2, (x[1] / x[2] / x[3]) * h * 0.865 + h / 2];
+  return [
+    (-((x[0] / x[2] / x[3]) * w) / 2) * 0.865 + w / 2,
+    (x[1] / x[2] / x[3]) * h * 0.865 + h / 2,
+  ];
 };
 
 const drawAABB = (
@@ -405,7 +408,7 @@ export const makeViewer = (
             // console.log(x[0] / x[2] / x[3], x[1] / x[2] / x[3]);
             // console.log((x[0] / x[2] / x[3]) * 300 + 300, (x[1] / x[2] / x[3]) * 300 + 300);
             event.current && cam.off(event.current);
-            event.current = cam.on('matrix', (e) => {
+            event.current = cam.on('matrix', (e: number[]) => {
               // const _x = math.mulMat4([...cam.projMatrix], [...e]);
               // const x = math.transformPoint4([...e], [...center, 1]);
               // const x = math.transformPoint4(cam.matrix, [...center, 1]);
