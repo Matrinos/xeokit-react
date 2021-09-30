@@ -9,6 +9,7 @@ import {
   Entity,
   FastNavPlugin,
   GLTFLoaderPlugin,
+  math,
   StoreyViewsPlugin,
   TreeViewPlugin,
   Viewer,
@@ -16,7 +17,89 @@ import {
 } from '@xeokit/xeokit-sdk';
 import { Camera } from '@xeokit/xeokit-sdk/viewer/scene/camera/Camera';
 import { forEach } from 'lodash';
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import Draggable from 'react-draggable';
+
+const get2dFrom3d = (w: number, h: number, cameraMatrix: number[], point: number[]) => {
+  const x = math.transformPoint4(cameraMatrix, [...point, 1]);
+  // console.log('aabb2', math.AABB2ToCanvas(aabb, 600,600))
+
+  return [-((x[0] / x[2] / x[3]) * w) / 2 * 0.865 + w / 2, (x[1] / x[2] / x[3]) * h * 0.865 + h / 2];
+};
+
+const drawAABB = (
+  canvasContext: CanvasRenderingContext2D,
+  cameraMatrix: number[],
+  aabb: number[],
+) => {
+  const points = [
+    [aabb[0], aabb[1], aabb[2]],
+    [aabb[0], aabb[1], aabb[5]],
+    [aabb[0], aabb[4], aabb[2]],
+    [aabb[0], aabb[4], aabb[5]],
+    [aabb[3], aabb[1], aabb[2]],
+    [aabb[3], aabb[1], aabb[5]],
+    [aabb[3], aabb[4], aabb[2]],
+    [aabb[3], aabb[4], aabb[5]],
+  ];
+
+  const points2d = points.map((p) =>
+    get2dFrom3d(canvasContext.canvas.width, canvasContext.canvas.height, cameraMatrix, p),
+  );
+  const bimCtx = canvasContext;
+  if (bimCtx) {
+    // bimCtx.clearRect(prevCoords.current[0], prevCoords.current[1], 100, 100);
+    bimCtx.clearRect(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+    bimCtx.strokeStyle = 'rgb(0, 255, 0)';
+    bimCtx.beginPath();
+    // points2d.forEach((p) => {
+    //   points2d.forEach((pTo) => {
+    //     if (p !== pTo) {
+
+    //     }
+    //   });
+    // });
+    bimCtx.moveTo(points2d[0][0], points2d[0][1]);
+    bimCtx.lineTo(points2d[1][0], points2d[1][1]);
+
+    bimCtx.moveTo(points2d[0][0], points2d[0][1]);
+    bimCtx.lineTo(points2d[2][0], points2d[2][1]);
+
+    bimCtx.moveTo(points2d[0][0], points2d[0][1]);
+    bimCtx.lineTo(points2d[4][0], points2d[4][1]);
+
+    bimCtx.moveTo(points2d[7][0], points2d[7][1]);
+    bimCtx.lineTo(points2d[3][0], points2d[3][1]);
+
+    bimCtx.moveTo(points2d[7][0], points2d[7][1]);
+    bimCtx.lineTo(points2d[5][0], points2d[5][1]);
+
+    bimCtx.moveTo(points2d[7][0], points2d[7][1]);
+    bimCtx.lineTo(points2d[6][0], points2d[6][1]);
+
+    bimCtx.moveTo(points2d[2][0], points2d[2][1]);
+    bimCtx.lineTo(points2d[6][0], points2d[6][1]);
+
+    bimCtx.moveTo(points2d[3][0], points2d[3][1]);
+    bimCtx.lineTo(points2d[2][0], points2d[2][1]);
+
+    bimCtx.moveTo(points2d[1][0], points2d[1][1]);
+    bimCtx.lineTo(points2d[3][0], points2d[3][1]);
+
+    bimCtx.moveTo(points2d[1][0], points2d[1][1]);
+    bimCtx.lineTo(points2d[5][0], points2d[5][1]);
+
+    bimCtx.moveTo(points2d[4][0], points2d[4][1]);
+    bimCtx.lineTo(points2d[5][0], points2d[5][1]);
+
+    bimCtx.moveTo(points2d[4][0], points2d[4][1]);
+    bimCtx.lineTo(points2d[6][0], points2d[6][1]);
+
+    bimCtx.stroke();
+    // bimCtx.line(overlayCoords[0], overlayCoords[1], 100, 100);
+    // prevCoords.current = overlayCoords;
+  }
+};
 
 interface Model {
   id: string;
@@ -110,7 +193,6 @@ export const makeViewer = (
     canvasID,
     width,
     height,
-    camera,
     models,
     bcfViewpoint,
     eventToPickOn = 'mouseclicked',
@@ -120,16 +202,62 @@ export const makeViewer = (
     isDev = false,
   }) => {
     const [isDevPanelVisible, setIsDevPanelVisible] = useState(false);
+    // const prevCoords = useRef([0, 0]);
+    // const [overlayCoords, setOverlayCoords] = useState([0, 0]);
+    const overlayCoordsRef = useRef([0, 0]);
+    const modelCenterRef = useRef([0, 0]);
+    const lineCanvas = useRef<HTMLCanvasElement>(null);
     const bimCanvas = useRef<HTMLCanvasElement>(null);
     const viewer = useRef<Viewer>();
     const modelLoader = useRef<InstanceType<typeof LoaderPlugin>>();
     const bcfViewpointsPlugin = useRef<BCFViewpointsPlugin>();
     const storeyViewsPlugin = useRef<StoreyViewsPlugin>();
+
+    // useEffect(() => {
+    //   const bimCtx = lineCanvas.current?.getContext('2d');
+    //   if (bimCtx) {
+    //     const cam = viewer.current?.camera as Camera;
+
+    //     console.log(cam);
+    //     // bimCtx.clearRect(prevCoords.current[0], prevCoords.current[1], 100, 100);
+    //     bimCtx.clearRect(0, 0, 600, 600);
+    //     bimCtx.strokeStyle = 'rgb(0, 0, 0)';
+    //     bimCtx.beginPath();
+    //     bimCtx.moveTo(0, 0);
+    //     bimCtx.lineTo(overlayCoords[0], overlayCoords[1]);
+    //     bimCtx.stroke();
+    //     // bimCtx.line(overlayCoords[0], overlayCoords[1], 100, 100);
+    //     // prevCoords.current = overlayCoords;
+    //   }
+    // }, [overlayCoords]);
+
+    // useEffect(() => {
+    // const bimCtx = bimCanvas.current?.getContext('webgl');
+    // console.log(bimCtx);
+    // bimCtx.
+    // bimCtx.beg
+    // if (bimCtx) {
+    //   console.log(bimCtx);
+    //   // bimCtx.clearRect(prevCoords.current[0], prevCoords.current[1], 100, 100);
+    //   bimCtx.clearRect(0, 0, 600, 600);
+    //   bimCtx.strokeStyle = 'rgb(0, 0, 0)';
+    //   bimCtx.beginPath();
+    //   bimCtx.moveTo(0, 0);
+    //   bimCtx.lineTo(overlayCoords[0], overlayCoords[1]);
+    //   bimCtx.stroke();
+    //   // bimCtx.line(overlayCoords[0], overlayCoords[1], 100, 100);
+    //   // prevCoords.current = overlayCoords;
+    // }
+    // }, [overlayCoords]);
+
     const setUpViewer = useCallback(() => {
       viewer.current = new Viewer({
         canvasId: canvasID,
         saoEnabled: true,
       });
+
+      viewer.current.scene.pointsMaterial.roundPoints = false;
+
       modelLoader.current = new LoaderPlugin(viewer.current, {
         objectDefaults: {
           IfcOpeningElement: {
@@ -185,13 +313,14 @@ export const makeViewer = (
     }, [canvasID]);
 
     const setCamera = useCallback(() => {
-      if (camera) {
-        const { eye, look, up } = camera;
-        camera.eye = eye;
-        camera.look = look;
-        camera.up = up;
-      }
-    }, [camera]);
+      // if (camera) {
+      //   const { eye, look, up } = camera;
+      //   camera.eye = eye;
+      //   camera.look = look;
+      //   camera.up = up;
+      // }
+      // (viewer.current?.camera as Camera).projection = 'ortho'
+    }, []);
 
     const setBCFViewpoints = useCallback(() => {
       bcfViewpointsPlugin.current?.setViewpoint(bcfViewpoint);
@@ -216,12 +345,12 @@ export const makeViewer = (
     const loadPlugins = useCallback(
       (viewerObj: Viewer) => {
         forEach(plugins, (plugin) => {
-          const [_, ...restArgs] = plugin.args || [];
+          const [, ...restArgs] = plugin.args || [];
           new plugin.plugin(viewerObj, ...restArgs);
         });
 
         forEach(components, (component) => {
-          const [_, ...restArgs] = component.args || [];
+          const [, ...restArgs] = component.args || [];
           new component.component(viewerObj.scene, ...restArgs);
         });
 
@@ -230,10 +359,11 @@ export const makeViewer = (
             containerElement: document.getElementById('treeViewContainer'),
           });
         }
-
       },
       [components, isDev, plugins],
     );
+
+    const event = useRef<string>();
 
     const pickEntity = useCallback(() => {
       let lastEntity: Entity | undefined;
@@ -248,22 +378,73 @@ export const makeViewer = (
 
         if (hit) {
           // eslint-disable-next-line no-console
-          console.log(hit.entity.id);
-          console.log(hit.entity);
+          // console.log(hit.entity.id);
+          // console.log(hit.entity);
           if (!lastEntity || hit.entity.id !== lastEntity.id) {
             if (lastEntity) {
               lastEntity.colorize = lastColorize;
             }
+            console.log(hit);
             lastEntity = hit.entity;
             lastColorize = hit.entity.colorize.slice();
             hit.entity.colorize = [0.0, 1.0, 1.0];
+            /**
+             * X' = ((X - Xc) * (F/Z)) + Xc
+             * Y' = ((Y - Yc) * (F/Z)) + Yc
+             */
+            // const { eye, look, up } = viewer.current?.camera as Camera;
+            const cam = viewer.current?.camera as Camera;
+            const ett = hit.entity as Entity;
+            const aabb = ett.aabb;
+            const center = [
+              (aabb[3] + aabb[0]) / 2,
+              (aabb[4] + aabb[1]) / 2,
+              (aabb[5] + aabb[2]) / 2,
+            ];
+            // const center = hit._worldPos
+            // console.log(x[0] / x[2] / x[3], x[1] / x[2] / x[3]);
+            // console.log((x[0] / x[2] / x[3]) * 300 + 300, (x[1] / x[2] / x[3]) * 300 + 300);
+            event.current && cam.off(event.current);
+            event.current = cam.on('matrix', (e) => {
+              // const _x = math.mulMat4([...cam.projMatrix], [...e]);
+              // const x = math.transformPoint4([...e], [...center, 1]);
+              // const x = math.transformPoint4(cam.matrix, [...center, 1]);
+              // console.log('aabb2', math.AABB2ToCanvas(aabb, 600,600))
+              console.log(center);
+              console.log(cam.matrix);
+              // console.log(x);
+              const bimCtx = lineCanvas.current?.getContext('2d');
+              if (bimCtx) {
+                // const cam = viewer.current?.camera as Camera;
+                drawAABB(bimCtx, [...e], [...aabb]);
+                const [x, y] = get2dFrom3d(width, height, e, center);
+                bimCtx.strokeStyle = 'rgb(255, 0, 0)';
+                bimCtx.beginPath();
+                modelCenterRef.current = [x, y];
+                console.log([x, y]);
+                bimCtx.moveTo(x, y);
+                bimCtx.lineTo(overlayCoordsRef.current[0], overlayCoordsRef.current[1]);
+                bimCtx.stroke();
+              }
+            });
+
+            // }
           }
         } else if (lastEntity) {
           lastEntity.colorize = lastColorize;
           lastEntity = undefined;
         }
       });
-    }, [eventToPickOn]);
+    }, [eventToPickOn, height, width]);
+
+    const overlay = useMemo(
+      () => (
+        <div style={{ padding: 20, background: 'white', position: 'absolute', left: 0, top: 0 }}>
+          This is overlay
+        </div>
+      ),
+      [],
+    );
 
     useEffect(() => {
       (async () => {
@@ -336,6 +517,43 @@ export const makeViewer = (
     return (
       <Container width={width} height={height}>
         <canvas ref={bimCanvas} id={canvasID} width={width} height={height} />
+        <canvas
+          ref={lineCanvas}
+          id={'overlay'}
+          width={width}
+          height={height}
+          style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
+        />
+        <Draggable
+          onDrag={(_, data) => {
+            // setOverlayCoords([data.x, data.y]);
+            overlayCoordsRef.current = [data.x, data.y];
+            // const _x = math.mulMat4([...cam.projMatrix], [...e]);
+
+            const bimCtx = lineCanvas.current?.getContext('2d');
+            if (bimCtx) {
+              const cam = viewer.current?.camera as Camera;
+              bimCtx.clearRect(0, 0, width, height);
+              // drawAABB(bimCtx, [...cam.matrix], aabb);
+
+              console.log(cam);
+              // bimCtx.clearRect(prevCoords.current[0], prevCoords.current[1], 100, 100);
+              // bimCtx.clearRect(0, 0, 600, 600);
+              bimCtx.strokeStyle = 'rgb(255, 0, 0)';
+              bimCtx.beginPath();
+
+              bimCtx.moveTo(modelCenterRef.current[0], modelCenterRef.current[1]);
+              bimCtx.lineTo(overlayCoordsRef.current[0], overlayCoordsRef.current[1]);
+              bimCtx.stroke();
+              //   // bimCtx.line(overlayCoords[0], overlayCoords[1], 100, 100);
+              //   // prevCoords.current = overlayCoords;
+            }
+          }}
+          bounds={{ left: 0, right: width - 100, top: 0, bottom: height - 60 }}
+        >
+          {overlay}
+        </Draggable>
+
         {navCubeSettings ? (
           <canvas
             style={{

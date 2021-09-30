@@ -17,42 +17,42 @@ const Template: ComponentStory<typeof XKTViewer> = (args) => {
 export const Primary = Template.bind({});
 Primary.args = {
   canvasID: 'canvas-xkt',
-  width: window.innerWidth,
-  height: window.innerHeight,
+  width: 1200,
+  height: 600,
   models: [
     {
-      id: 'xkt-model',
+      id: 'QD-01-A',
       src: './QD-01-A-R02-210917.xkt',
       performance: true,
     },
     {
       id: 'QD-02-A',
       src: './QD-02-A.xkt',
-      edges: true,
+      // edges: true,
       performance: true,
     },
-    {
-      id: 'QD-03-S',
-      src: './QD-03-S.xkt',
-      edges: true,
-      performance: true,
-    },
-    {
-      id: 'QD-01-S',
-      src: './QD-01-S.xkt',
-      edges: true,
-      performance: true,
-    },
-    {
-      id: 'QD-02-S',
-      src: './QD-02-S.xkt',
-      edges: true,
-      performance: true,
-    },
+    // {
+    //   id: 'QD-03-S',
+    //   src: './QD-03-S.xkt',
+    //   // edges: true,
+    //   performance: true,
+    // },
+    // {
+    //   id: 'QD-01-S',
+    //   src: './QD-01-S.xkt',
+    //   // edges: true,
+    //   performance: true,
+    // },
+    // {
+    //   id: 'QD-02-S',
+    //   src: './QD-02-S.xkt',
+    //   // edges: true,
+    //   performance: true,
+    // },
     {
       id: 'QD-03-A',
       src: './QD-03-A.xkt',
-      edges: true,
+      // edges: true,
       performance: true,
     },
   ],
