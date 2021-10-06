@@ -2584,6 +2584,10 @@
   resolved "https://registry.npmjs.org/@types/tapable/-/tapable-1.0.8.tgz"
   integrity sha512-ipixuVrh2OdNmauvtT51o3d8z12p6LtFW9in7U79der/kwejjdNchQC5UMn5u/KxNoM7VHHOs/l8KS8uHxhODQ==
 
+"@types/tuxmart__xeokit-sdk@tuxmart/xeokit-sdk-types":
+  version "1.0.0"
+  resolved "https://codeload.github.com/tuxmart/xeokit-sdk-types/tar.gz/0b36e0e93e0e777f0f547b1f10e8a4b40eabac9f"
+
 "@types/uglify-js@*":
   version "3.13.1"
   resolved "https://registry.npmjs.org/@types/uglify-js/-/uglify-js-3.13.1.tgz"
@@ -2621,11 +2625,6 @@
     "@types/webpack-sources" "*"
     anymatch "^3.0.0"
     source-map "^0.6.0"
-
-"@types/xeokit__xeokit-sdk@tuxmart/xeokit-sdk-types":
-  version "1.0.0"
-  resolved "https://codeload.github.com/tuxmart/xeokit-sdk-types/tar.gz/0b36e0e93e0e777f0f547b1f10e8a4b40eabac9f"
-  integrity sha512-n5dqOoSNoP5TZKOxAv+4mkjx9ek0Sd7tN9gX1Nr0nCZvaKrbJvj3iBCVh56We5H2E1Ib9TUbhQ4u46UYQfY9CA==
 
 "@types/yargs-parser@*":
   version "20.2.1"
