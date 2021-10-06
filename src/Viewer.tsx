@@ -14,8 +14,8 @@ import {
   TreeViewPlugin,
   Viewer,
   XKTLoaderPlugin,
-} from '@xeokit/xeokit-sdk';
-import { Camera } from '@xeokit/xeokit-sdk/viewer/scene/camera/Camera';
+} from '@tuxmart/xeokit-sdk';
+import { Camera } from '@tuxmart/xeokit-sdk/viewer/scene/camera/Camera';
 import { forEach } from 'lodash';
 import { FC, useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import Draggable from 'react-draggable';
