@@ -28,31 +28,44 @@ Primary.args = {
     {
       id: 'QD-02-A',
       src: './QD-02-A.xkt',
-      // edges: true,
       performance: true,
     },
-    // {
-    //   id: 'QD-03-S',
-    //   src: './QD-03-S.xkt',
-    //   // edges: true,
-    //   performance: true,
-    // },
-    // {
-    //   id: 'QD-01-S',
-    //   src: './QD-01-S.xkt',
-    //   // edges: true,
-    //   performance: true,
-    // },
-    // {
-    //   id: 'QD-02-S',
-    //   src: './QD-02-S.xkt',
-    //   // edges: true,
-    //   performance: true,
-    // },
     {
       id: 'QD-03-A',
       src: './QD-03-A.xkt',
-      // edges: true,
+      performance: true,
+    },
+  ],
+  navCubeSettings: {
+    canvasId: 'nav-cube-settings',
+    canvasWidth: 200,
+    canvasHeight: 200,
+  },
+  enableScreenshot: true,
+  isDev: true,
+};
+
+
+export const Vertical = Template.bind({});
+
+Vertical.args = {
+  canvasID: 'canvas-xkt',
+  width: 726,
+  height: 1180,
+  models: [
+    {
+      id: 'QD-01-A',
+      src: './QD-01-A-R02-210917.xkt',
+      performance: true,
+    },
+    {
+      id: 'QD-02-A',
+      src: './QD-02-A.xkt',
+      performance: true,
+    },
+    {
+      id: 'QD-03-A',
+      src: './QD-03-A.xkt',
       performance: true,
     },
   ],
