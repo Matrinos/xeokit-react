@@ -307,7 +307,7 @@ export const makeViewer = (
       //   camera.look = look;
       //   camera.up = up;
       // }
-      (viewer.current?.camera as Camera).projection = 'ortho';
+      // (viewer.current?.camera as Camera).projection = 'ortho';
     }, []);
 
     const setBCFViewpoints = useCallback(() => {
@@ -393,29 +393,23 @@ export const makeViewer = (
             hit.entity.colorize = [0.0, 1.0, 1.0];
 
             const cam = viewer.current?.camera as Camera;
-            // const ett = hit.entity as Entity;
-            // const aabb = ett.aabb;
-            // const center = [
-            //   (aabb[3] + aabb[0]) / 2,
-            //   (aabb[4] + aabb[1]) / 2,
-            //   (aabb[5] + aabb[2]) / 2,
-            // ];
+            const ett = hit.entity as Entity;
+            const aabb = ett.aabb;
+            const center = [
+              (aabb[3] + aabb[0]) / 2,
+              (aabb[4] + aabb[1]) / 2,
+              (aabb[5] + aabb[2]) / 2,
+            ];
             event.current && cam.off(event.current);
             event.current = cam.on('matrix', (e: number[]) => {
               const bimCtx = lineCanvas.current?.getContext('2d');
 
               if (bimCtx) {
                 bimCtx.clearRect(0, 0, bimCtx.canvas.width, bimCtx.canvas.height);
-                // drawAABB(bimCtx, [...e], [...aabb]);
-                // const [x, y] = get2dFrom3d(width, height, [...e], center);
-                // modelCenterRef.current = [x, y];
-                // drawOverlayLine();
-                viewer.current?.scene.objectIds
-                  .map((id) => viewer.current?.scene.getAABB([id]))
-                  .forEach((element) => {
-                    drawAABB(bimCtx, [...e], [...(element ?? [])]);
-                  });
-                // viewer.current?.scene.getAABB()
+                drawAABB(bimCtx, [...e], [...aabb]);
+                const [x, y] = get2dFrom3d(width, height, [...e], center);
+                modelCenterRef.current = [x, y];
+                drawOverlayLine();
               }
             });
           }
@@ -424,7 +418,7 @@ export const makeViewer = (
           lastEntity = undefined;
         }
       });
-    }, [eventToPickOn]);
+    }, [drawOverlayLine, eventToPickOn, height, width]);
 
     useEffect(() => {
       (async () => {
