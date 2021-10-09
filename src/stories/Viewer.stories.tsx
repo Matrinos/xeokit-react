@@ -19,6 +19,7 @@ Primary.args = {
   canvasID: 'canvas-xkt',
   width: 1200,
   height: 600,
+  overlay: <div style={{display: 'block', width: 200, height: 200}}>overlay</div>,
   models: [
     {
       id: 'QD-01-A',

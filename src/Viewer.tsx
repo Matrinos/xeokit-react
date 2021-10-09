@@ -513,6 +513,8 @@ export const makeViewer = (
       [drawOverlayLine, height, width],
     );
 
+    console.log(overlay)
+
     return (
       <Container width={width} height={height}>
         <canvas ref={bimCanvas} id={canvasID} width={width} height={height} />
@@ -524,7 +526,7 @@ export const makeViewer = (
           style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
         />
         <Draggable onDrag={onDrag} bounds={bounds}>
-          <div className="" ref={overlayRef}>
+          <div ref={overlayRef} style={{position:'absolute', top: 0, left: 0}}>
             {overlay}
           </div>
         </Draggable>
