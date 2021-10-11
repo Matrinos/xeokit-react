@@ -193,6 +193,7 @@ export const makeViewer = (
     const modelLoader = useRef<InstanceType<typeof LoaderPlugin>>();
     const bcfViewpointsPlugin = useRef<BCFViewpointsPlugin>();
     const storeyViewsPlugin = useRef<StoreyViewsPlugin>();
+    const event = useRef<string>();
 
     useEffect(() => {
       return () => {
@@ -313,6 +314,7 @@ export const makeViewer = (
     const setBCFViewpoints = useCallback(() => {
       bcfViewpointsPlugin.current?.setViewpoint(bcfViewpoint);
     }, [bcfViewpoint]);
+    
     const loadModels = useCallback(async () => {
       const entities = models.map((model) => {
         const m = modelLoader.current?.load({
@@ -350,7 +352,6 @@ export const makeViewer = (
       [components, isDev, plugins],
     );
 
-    const event = useRef<string>();
 
     const drawOverlayLine = useCallback(() => {
       const bimCtx = lineCanvas.current?.getContext('2d');
@@ -512,8 +513,6 @@ export const makeViewer = (
       },
       [drawOverlayLine, height, width],
     );
-
-    console.log(overlay)
 
     return (
       <Container width={width} height={height}>
