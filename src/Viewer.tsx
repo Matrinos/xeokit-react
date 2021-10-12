@@ -262,7 +262,6 @@ export const makeViewer = (
           maxGeometryBatchSize: 50000000,
         });
         new FastNavPlugin(viewer.current, {});
-
       }, [canvasID]);
 
       const setCamera = useCallback(() => {
@@ -351,9 +350,9 @@ export const makeViewer = (
 
                 if (bimCtx) {
                   if (debug) drawAABB(bimCtx, [...e], [...aabb]);
-                  const [x, y] = get2dFrom3d(width, height, [...e], center);
-                  onUpdateXY(x, y);
                 }
+                const [x, y] = get2dFrom3d(width, height, [...e], center);
+                onUpdateXY(x, y);
               });
             }
           } else if (lastEntity) {
