@@ -4,6 +4,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import SaveIcon from '@mui/icons-material/Save';
 import { IconButton } from '@mui/material';
+import { UnderlyingComponentProps } from '@tuxmart/ui';
 import {
   BCFViewpointsPlugin,
   Entity,
@@ -153,7 +154,7 @@ export interface BCFViewpointsJSON {
   };
 }
 
-export interface ViewerProps {
+export interface ViewerProps extends UnderlyingComponentProps {
   canvasID: string;
   width: number;
   height: number;
@@ -167,7 +168,6 @@ export interface ViewerProps {
   isDev?: boolean;
   overlay?: JSX.Element;
   debug?: boolean;
-  onUpdateXY: (x: number, y: number) => void;
 }
 
 export interface RefProps {
