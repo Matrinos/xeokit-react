@@ -1,6 +1,6 @@
 {
   "name": "@tuxmart/react-xeokit-viewer",
-  "version": "1.0.0-alpha.18",
+  "version": "1.0.0-alpha.19",
   "module": "dist/index",
   "types": "dist/index.d.ts",
   "scripts": {
