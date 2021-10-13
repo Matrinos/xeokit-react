@@ -168,6 +168,7 @@ export interface ViewerProps extends UnderlyingComponentProps {
   isDev?: boolean;
   overlay?: JSX.Element;
   debug?: boolean;
+  onSelectEntity?: (id?: string) => void
 }
 
 export interface RefProps {
@@ -196,6 +197,7 @@ export const makeViewer = (
         isDev = false,
         debug = false,
         onUpdateXY,
+        onSelectEntity=noop,
       },
       forwardedRef,
     ) => {
@@ -331,13 +333,13 @@ export const makeViewer = (
               if (lastEntity) {
                 lastEntity.colorize = lastColorize;
               }
-              console.log(hit);
               lastEntity = hit.entity;
               lastColorize = hit.entity.colorize.slice();
               hit.entity.colorize = [0.0, 1.0, 1.0];
 
               const cam = viewer.current?.camera as Camera;
               const ett = hit.entity as Entity;
+              onSelectEntity(ett.id)
               const aabb = ett.aabb;
               const center = [
                 (aabb[3] + aabb[0]) / 2,
@@ -358,9 +360,10 @@ export const makeViewer = (
           } else if (lastEntity) {
             lastEntity.colorize = lastColorize;
             lastEntity = undefined;
+            onSelectEntity();
           }
         });
-      }, [debug, eventToPickOn, height, onUpdateXY, width]);
+      }, [debug, eventToPickOn, height, onSelectEntity, onUpdateXY, width]);
 
       useEffect(() => {
         (async () => {
