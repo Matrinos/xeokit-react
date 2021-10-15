@@ -4,7 +4,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import SaveIcon from '@mui/icons-material/Save';
 import { IconButton } from '@mui/material';
-import { UnderlyingComponentProps } from '@tuxmart/ui';
+import { Point2D } from '@tuxmart/ui';
 import {
   BCFViewpointsPlugin,
   Entity,
@@ -154,7 +154,7 @@ export interface BCFViewpointsJSON {
   };
 }
 
-export interface ViewerProps extends UnderlyingComponentProps {
+export interface ViewerProps {
   canvasID: string;
   width: number;
   height: number;
@@ -168,7 +168,9 @@ export interface ViewerProps extends UnderlyingComponentProps {
   isDev?: boolean;
   overlay?: JSX.Element;
   debug?: boolean;
-  onSelectEntity?: (id?: string) => void
+  onUpdateXY?: (pt: Point2D) => void;
+  onSelectEntity?: (id?: string) => void;
+  onUnselectEntity?: () => void;
 }
 
 export interface RefProps {
@@ -196,8 +198,9 @@ export const makeViewer = (
         components,
         isDev = false,
         debug = false,
-        onUpdateXY,
-        onSelectEntity=noop,
+        onUpdateXY = noop,
+        onSelectEntity = noop,
+        // onUnselectEntity,
       },
       forwardedRef,
     ) => {
@@ -322,6 +325,8 @@ export const makeViewer = (
         let lastColorize: Colorize;
 
         const scene = viewer.current?.scene;
+        const cam = viewer.current?.camera as Camera;
+        event.current && cam.off(event.current);
 
         scene?.input.on(eventToPickOn, (coords: [number, number]) => {
           const hit = scene.pick({
@@ -337,16 +342,14 @@ export const makeViewer = (
               lastColorize = hit.entity.colorize.slice();
               hit.entity.colorize = [0.0, 1.0, 1.0];
 
-              const cam = viewer.current?.camera as Camera;
               const ett = hit.entity as Entity;
-              onSelectEntity(ett.id)
+              onSelectEntity(ett.id);
               const aabb = ett.aabb;
               const center = [
                 (aabb[3] + aabb[0]) / 2,
                 (aabb[4] + aabb[1]) / 2,
                 (aabb[5] + aabb[2]) / 2,
               ];
-              event.current && cam.off(event.current);
               event.current = cam.on('matrix', (e: number[]) => {
                 const bimCtx = lineCanvas.current?.getContext('2d');
 
@@ -354,7 +357,7 @@ export const makeViewer = (
                   if (debug) drawAABB(bimCtx, [...e], [...aabb]);
                 }
                 const [x, y] = get2dFrom3d(width, height, [...e], center);
-                onUpdateXY(x, y);
+                onUpdateXY({ x, y });
               });
             }
           } else if (lastEntity) {
@@ -536,22 +539,4 @@ const Container = styled.div<{
   position: relative;
   background: linear-gradient(rgb(39, 120, 187), rgb(151, 193, 219));
   overflow: hidden;
-
-  /* button {
-    all: unset;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 24px;
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 12px;
-    &:hover {
-      background: #0006;
-    }
-  }
-
-  button + button {
-    margin-left: 10px;
-  } */
 `;
