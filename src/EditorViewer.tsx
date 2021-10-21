@@ -33,12 +33,6 @@ interface NavCubeSettingsItem {
 
 type Colorize = [number, number, number]; // [r, g, b]
 
-// interface Point3D {
-//   x: number;
-//   y: number;
-//   z: number;
-// }
-
 export interface ViewerProps {
   canvasID: string;
   width: number;
@@ -49,10 +43,6 @@ export interface ViewerProps {
   onUpdateXY?: (pt: Point2D) => void;
   onSelectEntity?: (id?: string) => void;
   onUnselectEntity?: () => void;
-}
-
-export interface RefProps {
-  unselect?: () => void;
 }
 
 export const EditorViewer: FC<ViewerProps> = ({
