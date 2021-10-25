@@ -15,22 +15,31 @@ export default {
 const Template: ComponentStory<typeof XKTViewer> = (args) => {
   return (
     <BimOverlayProvider>
-      <BIMOverlay
-        underlay={<Underlay {...args} />}
-        overlay={<Overlay />}
-        width={1200}
-        height={600}
-      />
+      <BIMOverlay underlay={<Underlay {...args} />} width={1200} height={600} />
     </BimOverlayProvider>
   );
 };
 
 const Underlay: FC<ViewerProps> = ({ ...args }) => {
-  const { setSelectedEntityId, setModelXY } = useBimOverlayContext();
+  const { setModelXY, addOverlay, removeOverlay } = useBimOverlayContext();
 
   const viewer = useMemo(
-    () => <XKTViewer {...args} onSelectEntity={setSelectedEntityId} onUpdateXY={setModelXY} />,
-    [args, setModelXY, setSelectedEntityId],
+    () => (
+      <XKTViewer
+        {...args}
+        onUpdateXY={setModelXY}
+        onSelectEntity={(id, source, destination) =>
+          addOverlay({
+            id,
+            source,
+            destination,
+            layer: <Overlay />,
+          })
+        }
+        onUnselectEntity={removeOverlay}
+      />
+    ),
+    [addOverlay, args, removeOverlay, setModelXY],
   );
   return viewer;
 };
