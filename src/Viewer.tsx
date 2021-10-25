@@ -101,9 +101,9 @@ export interface ViewerProps {
   isDev?: boolean;
   overlay?: JSX.Element;
   debug?: boolean;
-  onUpdateXY?: (pt: Point2D) => void;
-  onSelectEntity?: (id?: string) => void;
-  onUnselectEntity?: () => void;
+  onUpdateXY?: (id: string, pt: Point2D) => void;
+  onSelectEntity?: (id: string, source: Point2D, destination: Point2D) => void;
+  onUnselectEntity?: (id: string) => void;
 }
 
 interface ModelEntity extends Entity {
@@ -127,6 +127,7 @@ export const makeViewer = (
     debug = false,
     onUpdateXY = noop,
     onSelectEntity = noop,
+    onUnselectEntity,
   }) => {
     const [isDevPanelVisible, setIsDevPanelVisible] = useState(false);
     const lineCanvas = useRef<HTMLCanvasElement>(null);
@@ -262,13 +263,27 @@ export const makeViewer = (
             hit.entity.colorize = [0.0, 1.0, 1.0];
 
             const ett = hit.entity as Entity;
-            onSelectEntity(ett.id);
             const aabb = ett.aabb;
             const center = [
               (aabb[3] + aabb[0]) / 2,
               (aabb[4] + aabb[1]) / 2,
               (aabb[5] + aabb[2]) / 2,
             ];
+            const [_x, _y] = get2dFrom3d(
+              width,
+              height,
+              [...(viewer.current?.camera as Camera).viewMatrix],
+              center,
+            );
+
+            onSelectEntity(
+              ett.id,
+              { x: 100, y: 100 },
+              {
+                x: _x,
+                y: _y,
+              },
+            );
             event.current = cam.on('matrix', (e: number[]) => {
               const bimCtx = lineCanvas.current?.getContext('2d');
 
@@ -276,16 +291,18 @@ export const makeViewer = (
                 if (debug) drawAABB(bimCtx, [...e], [...aabb]);
               }
               const [x, y] = get2dFrom3d(width, height, [...e], center);
-              onUpdateXY({ x, y });
+              onUpdateXY(ett.id, { x, y });
             });
+          } else {
+            onUnselectEntity?.(hit.entity.id);
           }
         } else if (lastEntity) {
           lastEntity.colorize = lastColorize;
           lastEntity = undefined;
-          onSelectEntity();
         }
       });
-    }, [debug, eventToPickOn, height, onSelectEntity, onUpdateXY, width]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debug, eventToPickOn, height, width]);
 
     useEffect(() => {
       (async () => {
