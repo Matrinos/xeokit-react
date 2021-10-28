@@ -16,7 +16,7 @@ import {
   XKTLoaderPlugin,
 } from '@tuxmart/xeokit-sdk';
 import { Camera } from '@tuxmart/xeokit-sdk/viewer/scene/camera/Camera';
-import { forEach, noop } from 'lodash';
+import { countBy, forEach, noop } from 'lodash';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { drawAABB, get2dFrom3d } from './utils';
 
@@ -33,8 +33,6 @@ interface NavCubeSettingsItem {
   canvasWidth?: number;
   canvasHeight?: number;
 }
-
-type Colorize = [number, number, number]; // [r, g, b]
 
 interface Point3D {
   x: number;
@@ -136,7 +134,8 @@ export const makeViewer = (
     const modelLoader = useRef<InstanceType<typeof LoaderPlugin>>();
     const bcfViewpointsPlugin = useRef<BCFViewpointsPlugin>();
     const storeyViewsPlugin = useRef<StoreyViewsPlugin>();
-    const event = useRef<string>();
+    const camMatEvent = useRef<Record<string, string>>({});
+    const selectedEntities = useRef<Record<string, boolean>>({});
 
     useEffect(() => {
       return () => {
@@ -241,12 +240,8 @@ export const makeViewer = (
     );
 
     const pickEntity = useCallback(() => {
-      let lastEntity: Entity | undefined;
-      let lastColorize: Colorize;
-
       const scene = viewer.current?.scene;
       const cam = viewer.current?.camera as Camera;
-      event.current && cam.off(event.current);
 
       scene?.input.on(eventToPickOn, (coords: [number, number]) => {
         const hit = scene.pick({
@@ -254,15 +249,13 @@ export const makeViewer = (
         });
 
         if (hit) {
-          if (!lastEntity || hit.entity.id !== lastEntity.id) {
-            if (lastEntity) {
-              lastEntity.colorize = lastColorize;
-            }
-            lastEntity = hit.entity;
-            lastColorize = hit.entity.colorize.slice();
-            hit.entity.colorize = [0.0, 1.0, 1.0];
+          const ett = hit.entity as Entity;
+          if (!selectedEntities.current[ett.id]) {
+            selectedEntities.current[ett.id] = true;
+            ett.highlighted = true;
 
-            const ett = hit.entity as Entity;
+            camMatEvent.current[ett.id] && cam.off(camMatEvent.current[ett.id]);
+
             const aabb = ett.aabb;
             const center = [
               (aabb[3] + aabb[0]) / 2,
@@ -276,15 +269,18 @@ export const makeViewer = (
               center,
             );
 
+            const num = countBy(selectedEntities.current)['true'];
+
             onSelectEntity(
               ett.id,
-              { x: 100, y: 100 },
+              { x: 100 + num * 20, y: 100 + num * 20 },
               {
                 x: _x,
                 y: _y,
               },
             );
-            event.current = cam.on('matrix', (e: number[]) => {
+
+            camMatEvent.current[ett.id] = cam.on('matrix', (e: number[]) => {
               const bimCtx = lineCanvas.current?.getContext('2d');
 
               if (bimCtx) {
@@ -294,11 +290,10 @@ export const makeViewer = (
               onUpdateXY(ett.id, { x, y });
             });
           } else {
-            onUnselectEntity?.(hit.entity.id);
+            onUnselectEntity?.(`${ett.id}`);
+            selectedEntities.current[ett.id] = false;
+            ett.highlighted = false;
           }
-        } else if (lastEntity) {
-          lastEntity.colorize = lastColorize;
-          lastEntity = undefined;
         }
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps
