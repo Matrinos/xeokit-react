@@ -33,7 +33,7 @@ const Underlay: FC<ViewerProps> = ({ ...args }) => {
             id,
             source,
             destination,
-            layer: <Overlay />,
+            layer: <Overlay id={id} />,
           })
         }
         onUnselectEntity={removeOverlay}
@@ -44,8 +44,8 @@ const Underlay: FC<ViewerProps> = ({ ...args }) => {
   return viewer;
 };
 
-const Overlay: FC = () => {
-  const { selectedEntityId } = useBimOverlayContext();
+const Overlay: FC<{id: string}> = ({id}) => {
+  const { removeOverlay } = useBimOverlayContext();
 
   return (
     <div
@@ -59,8 +59,9 @@ const Overlay: FC = () => {
         color: 'white',
         fontWeight: 'bold',
       }}
+      onClick={() => removeOverlay(id)}
     >
-      {selectedEntityId ? JSON.stringify(selectedEntityId) : 'no entities selected'}
+      {id ? JSON.stringify(id) : 'no entities selected'}
     </div>
   );
 };

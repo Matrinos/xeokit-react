@@ -21,21 +21,21 @@ Primary.args = {
   height: 600,
   overlay: <div style={{ display: 'block', width: 200, height: 200 }}>overlay</div>,
   models: [
-    // {
-    //   id: 'QD-01-A',
-    //   src: './duplex.xkt',
-    //   performance: true,
-    // },
     {
-      id: 'QD-02-A',
-      src: 'http://localhost:6000/api/v1/xkt/download/07ecedce4f7be5856cc31c9fd9ccb91c.xkt',
+      id: 'QD-01-A',
+      src: './QD-01-A-R02-210917.xkt',
       performance: true,
     },
-    // {
-    //   id: 'QD-03-A',
-    //   src: './QD-03-A.xkt',
-    //   performance: true,
-    // },
+    {
+      id: 'QD-02-A',
+      src: './QD-02-A.xkt',
+      performance: true,
+    },
+    {
+      id: 'QD-03-A',
+      src: './QD-03-A.xkt',
+      performance: true,
+    },
   ],
   navCubeSettings: {
     canvasId: 'nav-cube-settings',
