@@ -19,16 +19,16 @@ Primary.args = {
   canvasID: 'canvas-xkt',
   width: 1200,
   height: 600,
-  overlay: <div style={{display: 'block', width: 200, height: 200}}>overlay</div>,
+  overlay: <div style={{ display: 'block', width: 200, height: 200 }}>overlay</div>,
   models: [
-    {
-      id: 'QD-01-A',
-      src: './duplex.xkt',
-      performance: true,
-    },
+    // {
+    //   id: 'QD-01-A',
+    //   src: './duplex.xkt',
+    //   performance: true,
+    // },
     {
       id: 'QD-02-A',
-      src: './QD-02-A.xkt',
+      src: 'http://localhost:6000/api/v1/xkt/download/07ecedce4f7be5856cc31c9fd9ccb91c.xkt',
       performance: true,
     },
     // {

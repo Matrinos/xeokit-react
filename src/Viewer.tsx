@@ -442,6 +442,7 @@ const DevPanel = styled.div<{ isDevPanelVisible: boolean }>`
 const Buttons = styled.div`
   display: flex;
   flex-direction: row;
+  align-items: center;
 `;
 
 const TreeViewContainer = styled.div`
