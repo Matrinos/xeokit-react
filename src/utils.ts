@@ -1,5 +1,11 @@
 import { math } from '@tuxmart/xeokit-sdk';
 
+export const getAABBCenter = (aabb: Float64Array): [number, number, number] => [
+  (aabb[3] + aabb[0]) / 2,
+  (aabb[4] + aabb[1]) / 2,
+  (aabb[5] + aabb[2]) / 2,
+];
+
 export const get2dFrom3d = (
   w: number,
   h: number,
@@ -7,14 +13,14 @@ export const get2dFrom3d = (
   point: number[],
 ): [number, number] => {
   const x = math.transformPoint4(cameraMatrix, [...point, 1]);
-  // console.log(x)
-  // console.log(cameraMatrix);
   return [-(((x[0] / x[2] / x[3]) * w) / 2) + w / 2, (x[1] / x[2] / x[3]) * h + h / 2];
 };
+
 const drawLine = (ctx: CanvasRenderingContext2D, from: [number, number], to: [number, number]) => {
   ctx.moveTo(from[0], from[1]);
   ctx.lineTo(to[0], to[1]);
 };
+
 export const drawAABB = (
   canvasContext: CanvasRenderingContext2D,
   cameraMatrix: number[],

@@ -1,7 +1,6 @@
 import styled from '@emotion/styled';
 import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import SaveIcon from '@mui/icons-material/Save';
 import { IconButton } from '@mui/material';
 import { Point2D } from '@tuxmart/ui';
@@ -10,15 +9,14 @@ import {
   Entity,
   FastNavPlugin,
   GLTFLoaderPlugin,
-  StoreyViewsPlugin,
-  TreeViewPlugin,
   Viewer,
   XKTLoaderPlugin,
 } from '@tuxmart/xeokit-sdk';
 import { Camera } from '@tuxmart/xeokit-sdk/viewer/scene/camera/Camera';
-import { countBy, forEach, noop } from 'lodash';
+import { forEach, noop, values } from 'lodash';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
-import { drawAABB, get2dFrom3d } from './utils';
+import { IFC_DEFAULTS } from './config';
+import { drawAABB, get2dFrom3d, getAABBCenter } from './utils';
 
 interface Model {
   id: string;
@@ -133,9 +131,6 @@ export const makeViewer = (
     const viewer = useRef<Viewer>();
     const modelLoader = useRef<InstanceType<typeof LoaderPlugin>>();
     const bcfViewpointsPlugin = useRef<BCFViewpointsPlugin>();
-    const storeyViewsPlugin = useRef<StoreyViewsPlugin>();
-    const camMatEvent = useRef<Record<string, string>>({});
-    const selectedEntities = useRef<Record<string, boolean>>({});
 
     useEffect(() => {
       return () => {
@@ -150,53 +145,34 @@ export const makeViewer = (
         canvasId: canvasID,
         saoEnabled: true,
       });
-
       viewer.current.scene.pointsMaterial.roundPoints = false;
-
-      modelLoader.current = new LoaderPlugin(viewer.current, {
-        objectDefaults: {
-          IfcOpeningElement: {
-            pickable: false,
-            visible: false,
-          },
-
-          IfcSpace: {
-            colorize: [0.5, 0.5, 1],
-            pickable: true,
-            visible: true,
-            opacity: 0.3,
-          },
-
-          IfcWindow: {
-            colorize: [0.137255, 0.403922, 0.870588],
-            opacity: 0.5,
-          },
-
-          IfcPlate: {
-            colorize: [0.8470588235, 0.427450980392, 0],
-            opacity: 0.3,
-          },
-
-          DEFAULT: {},
-          // IfcSpace: {
-          //   pickable: true,
-          //   opacity: 1,
-          // },
-        },
-        maxGeometryBatchSize: 50000000,
-      });
-      new FastNavPlugin(viewer.current, {});
     }, [canvasID]);
 
-    const setCamera = useCallback(() => {
-      // if (camera) {
-      //   const { eye, look, up } = camera;
-      //   camera.eye = eye;
-      //   camera.look = look;
-      //   camera.up = up;
-      // }
-      // (viewer.current?.camera as Camera).projection = 'ortho';
+    const initializeModelLoader = useCallback(() => {
+      modelLoader.current = new LoaderPlugin(viewer.current, {
+        objectDefaults: IFC_DEFAULTS,
+        maxGeometryBatchSize: 50000000,
+      });
     }, []);
+
+    const setCamera = useCallback(() => {
+      const cam = viewer.current?.camera as Camera;
+      if (cam) {
+        cam.on('matrix', (e: number[]) => {
+          const bimCtx = lineCanvas.current?.getContext('2d');
+          values(viewer.current?.scene.highlightedObjects).forEach((ett: Entity) => {
+            const center = getAABBCenter(ett.aabb);
+            if (bimCtx) {
+              if (debug) drawAABB(bimCtx, [...e], [...ett.aabb]);
+            }
+            const [x, y] = get2dFrom3d(width, height, [...e], center);
+            // TODO: Batch this update
+            onUpdateXY(ett.id, { x, y });
+          });
+        });
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debug, height, width]);
 
     const setBCFViewpoints = useCallback(() => {
       bcfViewpointsPlugin.current?.setViewpoint(bcfViewpoint);
@@ -218,31 +194,34 @@ export const makeViewer = (
       );
     }, [models]);
 
-    const loadPlugins = useCallback(
-      (viewerObj: Viewer) => {
-        forEach(plugins, (plugin) => {
-          const [, ...restArgs] = plugin.args || [];
-          new plugin.plugin(viewerObj, ...restArgs);
-        });
+    const loadPlugins = useCallback(() => {
+      forEach(plugins, (plugin) => {
+        const [, ...restArgs] = plugin.args || [];
+        new plugin.plugin(viewer.current, ...restArgs);
+      });
 
-        forEach(components, (component) => {
-          const [, ...restArgs] = component.args || [];
-          new component.component(viewerObj.scene, ...restArgs);
-        });
+      forEach(components, (component) => {
+        const [, ...restArgs] = component.args || [];
+        new component.component(viewer.current?.scene, ...restArgs);
+      });
 
-        if (isDev) {
-          new TreeViewPlugin(viewerObj, {
-            containerElement: document.getElementById('treeViewContainer'),
-          });
-        }
+      new FastNavPlugin(viewer.current, {});
+    }, [components, plugins]);
+
+    const getAABBCenter2DPosition = useCallback(
+      (center: number[]) => {
+        return get2dFrom3d(
+          width,
+          height,
+          [...(viewer.current?.camera as Camera).viewMatrix],
+          center,
+        );
       },
-      [components, isDev, plugins],
+      [height, width],
     );
 
     const pickEntity = useCallback(() => {
       const scene = viewer.current?.scene;
-      const cam = viewer.current?.camera as Camera;
-
       scene?.input.on(eventToPickOn, (coords: [number, number]) => {
         const hit = scene.pick({
           canvasPos: coords,
@@ -250,48 +229,16 @@ export const makeViewer = (
 
         if (hit) {
           const ett = hit.entity as Entity;
-          if (!selectedEntities.current[ett.id]) {
-            selectedEntities.current[ett.id] = true;
+          if (!ett.highlighted) {
             ett.highlighted = true;
-
-            camMatEvent.current[ett.id] && cam.off(camMatEvent.current[ett.id]);
-
             const aabb = ett.aabb;
-            const center = [
-              (aabb[3] + aabb[0]) / 2,
-              (aabb[4] + aabb[1]) / 2,
-              (aabb[5] + aabb[2]) / 2,
-            ];
-            const [_x, _y] = get2dFrom3d(
-              width,
-              height,
-              [...(viewer.current?.camera as Camera).viewMatrix],
-              center,
-            );
+            const center = getAABBCenter(aabb);
+            const [x, y] = getAABBCenter2DPosition(center);
 
-            const num = countBy(selectedEntities.current)['true'];
-
-            onSelectEntity(
-              ett.id,
-              { x: 100 + num * 20, y: 100 + num * 20 },
-              {
-                x: _x,
-                y: _y,
-              },
-            );
-
-            camMatEvent.current[ett.id] = cam.on('matrix', (e: number[]) => {
-              const bimCtx = lineCanvas.current?.getContext('2d');
-
-              if (bimCtx) {
-                if (debug) drawAABB(bimCtx, [...e], [...aabb]);
-              }
-              const [x, y] = get2dFrom3d(width, height, [...e], center);
-              onUpdateXY(ett.id, { x, y });
-            });
+            const num = viewer.current?.scene.highlightedObjectIds.length ?? 0;
+            onSelectEntity(ett.id, { x: 100 + num * 20, y: 100 + num * 20 }, { x, y });
           } else {
             onUnselectEntity?.(`${ett.id}`);
-            selectedEntities.current[ett.id] = false;
             ett.highlighted = false;
           }
         }
@@ -302,15 +249,16 @@ export const makeViewer = (
     useEffect(() => {
       (async () => {
         setUpViewer();
+        initializeModelLoader();
+        loadPlugins();
+        loadModels();
         setCamera();
-        // (viewer.current?.camera as Camera).projection = 'ortho';
-        viewer.current && loadPlugins(viewer.current);
-        await loadModels();
         if (bcfViewpoint) setBCFViewpoints();
         pickEntity();
       })();
     }, [
       bcfViewpoint,
+      initializeModelLoader,
       loadModels,
       loadPlugins,
       pickEntity,
@@ -321,32 +269,6 @@ export const makeViewer = (
 
     const toggleDevPanel = useCallback(() => {
       setIsDevPanelVisible((prev) => !prev);
-    }, []);
-
-    const takeScreenshot = useCallback(() => {
-      // const imageData = viewer.current?.getSnapshot({
-      //   format: 'png',
-      // });
-
-      // if (imageData) {
-      //   const link = document.createElement('a');
-      //   link.setAttribute('href', imageData);
-      //   link.setAttribute('download', 'model-screenshot');
-      //   link.click();
-      // }
-
-      const mp = storeyViewsPlugin.current?.createStoreyMap('3P3Lub7Zj769ajSMElBcQ3', {
-        width: 1920,
-        height: 1920,
-      });
-      const imageData = mp?.imageData;
-
-      if (imageData) {
-        const link = document.createElement('a');
-        link.setAttribute('href', imageData);
-        link.setAttribute('download', 'storey-map');
-        link.click();
-      }
     }, []);
 
     const downloadBCF = useCallback(() => {
@@ -389,14 +311,6 @@ export const makeViewer = (
             <DevPanel isDevPanelVisible={isDevPanelVisible}>
               <TreeViewContainer id="treeViewContainer" />
               <Buttons>
-                <IconButton
-                  type="button"
-                  id="take-screenshot"
-                  className="btn btn-primary"
-                  onClick={takeScreenshot}
-                >
-                  <PhotoCameraIcon />
-                </IconButton>
                 <IconButton onClick={downloadBCF}>
                   <SaveIcon />
                 </IconButton>
