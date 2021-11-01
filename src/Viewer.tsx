@@ -11,6 +11,7 @@ import {
   GLTFLoaderPlugin,
   Viewer,
   XKTLoaderPlugin,
+  TreeViewPlugin,
 } from '@tuxmart/xeokit-sdk';
 import { Camera } from '@tuxmart/xeokit-sdk/viewer/scene/camera/Camera';
 import { forEach, noop, values } from 'lodash';
@@ -206,6 +207,9 @@ export const makeViewer = (
       });
 
       new FastNavPlugin(viewer.current, {});
+      new TreeViewPlugin(viewer.current, {
+        containerElement: document.getElementById('treeViewContainer'),
+      });
     }, [components, plugins]);
 
     const getAABBCenter2DPosition = useCallback(
