@@ -2836,10 +2836,9 @@
   resolved "https://registry.yarnpkg.com/@types/tapable/-/tapable-1.0.8.tgz#b94a4391c85666c7b73299fd3ad79d4faa435310"
   integrity sha512-ipixuVrh2OdNmauvtT51o3d8z12p6LtFW9in7U79der/kwejjdNchQC5UMn5u/KxNoM7VHHOs/l8KS8uHxhODQ==
 
-"@types/tuxmart__xeokit-sdk@npm:@tuxmart/xeokit-sdk-types@2.0.13":
+"@types/tuxmart__xeokit-sdk@tuxmart/xeokit-sdk-types":
   version "2.0.13"
-  resolved "https://npm.pkg.github.com/download/@tuxmart/xeokit-sdk-types/2.0.13/59bc71718c58672fbf5186d7e1ebbba5b1e61ffaa5ca67e2d8cc53cda3197259#f0bbe5ccb987066a1f10475f9905710d1b6c018d"
-  integrity sha512-d7UVoZSUH9ZN5KBBCORiz0UZgrKPqlpXSq5gnpwqWGArNS/9GIKkx1r0s3sKcJoIuAOu5zZhboBaxwHOkQitEg==
+  resolved "https://codeload.github.com/tuxmart/xeokit-sdk-types/tar.gz/b65b34625c9b1e6bda09d40705c8582efcd89b56"
 
 "@types/uglify-js@*":
   version "3.13.1"
