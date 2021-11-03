@@ -207,10 +207,11 @@ export const makeViewer = (
       });
 
       new FastNavPlugin(viewer.current, {});
-      new TreeViewPlugin(viewer.current, {
-        containerElement: document.getElementById('treeViewContainer'),
-      });
-    }, [components, plugins]);
+      isDev &&
+        new TreeViewPlugin(viewer.current, {
+          containerElement: document.getElementById('treeViewContainer'),
+        });
+    }, [components, isDev, plugins]);
 
     const getAABBCenter2DPosition = useCallback(
       (center: number[]) => {
