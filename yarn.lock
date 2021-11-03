@@ -2605,10 +2605,12 @@
     react-use-measure "^2.0.4"
     styled-components "^5.3.1"
 
-"@tuxmart/xeokit-sdk@^2.0.13":
-  version "2.0.13"
-  resolved "https://npm.pkg.github.com/download/@tuxmart/xeokit-sdk/2.0.13/7bfad488d8a92a65312760463264011847f5d2ff71348232707dee17ab91e0f3#8543bb5a3c2aa9d6fbb4df365f7a4db12cfb7171"
-  integrity sha512-jiydWorx3O5dn+3CEzyNWOYP0c4JKS1Ga1QMuoQzAykxk0gnt3sL0Nl3Ry9S+DkiOkYSuLzjVB3QKPscmKa+LQ==
+"@tuxmart/xeokit-sdk@^2.0.14":
+  version "2.0.14"
+  resolved "https://npm.pkg.github.com/download/@tuxmart/xeokit-sdk/2.0.14/56d85bc8283ce37ee68506d64c69d5317b3533bb726dcca2d0d6e1241ba4f7af#a3b8ec54adceb1f9e6885bc639b00e6ba10c27da"
+  integrity sha512-wEFq4aa9BYMFm1yAZK+WuN2sBXqczzviKkzAi0F8CmfQ+/yOyJIen0EWVqDcBX8fkhXOK6zAA7oyF7DShvknEg==
+  dependencies:
+    web-ifc "0.0.26"
 
 "@types/braces@*":
   version "3.0.1"
@@ -11054,6 +11056,11 @@ watchpack@^1.7.4:
   optionalDependencies:
     chokidar "^3.4.1"
     watchpack-chokidar2 "^2.0.1"
+
+web-ifc@0.0.26:
+  version "0.0.26"
+  resolved "https://registry.yarnpkg.com/web-ifc/-/web-ifc-0.0.26.tgz#b2ba8479bc9911ae834364d5e3477372a3966699"
+  integrity sha512-mbcLJNrt0LXxLzvnN8ZAi/Fo+lgtFFfvCoG7PWF/BGrScQs3Jmd+N2ReFub5SXtOIMGaojjmzryf6IlGVscWKA==
 
 web-namespaces@^1.0.0:
   version "1.1.4"
