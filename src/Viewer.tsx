@@ -207,6 +207,7 @@ export const makeViewer = (
       });
 
       new FastNavPlugin(viewer.current, {});
+      new BCFViewpointsPlugin(viewer.current, {});
       isDev &&
         new TreeViewPlugin(viewer.current, {
           containerElement: document.getElementById('treeViewContainer'),
