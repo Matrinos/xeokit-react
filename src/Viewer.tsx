@@ -8,13 +8,22 @@ import {
   Entity,
   FastNavPlugin,
   GLTFLoaderPlugin,
+  TreeViewPlugin,
   Viewer,
   XKTLoaderPlugin,
-  TreeViewPlugin,
 } from '@tuxmart/xeokit-sdk';
 import { Camera } from '@tuxmart/xeokit-sdk/viewer/scene/camera/Camera';
-import { forEach, noop, values } from 'lodash';
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { noop, values } from 'lodash';
+import {
+  forwardRef,
+  ForwardRefExoticComponent,
+  RefAttributes,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { IFC_DEFAULTS } from './config';
 import { drawAABB, get2dFrom3d, getAABBCenter } from './utils';
 
@@ -95,246 +104,249 @@ export interface ViewerProps {
   bcfViewpoint?: BCFViewpointsJSON;
   eventToPickOn?: string;
   navCubeSettings?: NavCubeSettingsItem;
-  components?: any[];
-  plugins?: any[];
   isDev?: boolean;
   overlay?: JSX.Element;
   debug?: boolean;
   onUpdateXY?: (id: string, pt: Point2D) => void;
   onSelectEntity?: (id: string, source: Point2D, destination: Point2D) => void;
   onUnselectEntity?: (id: string) => void;
+  onLoad?: (viewer?: Viewer) => void;
 }
 
 interface ModelEntity extends Entity {
   on: (event: string, callback: (...args: unknown[]) => void) => void;
 }
 
+export interface ModelViewerRef {
+  getViewer: () => Viewer | undefined;
+}
+
 export const makeViewer = (
   LoaderPlugin: typeof GLTFLoaderPlugin | typeof XKTLoaderPlugin,
-): FC<ViewerProps> => {
-  const ModelViewer: FC<ViewerProps> = ({
-    canvasID,
-    width,
-    height,
-    models,
-    bcfViewpoint,
-    eventToPickOn = 'mouseclicked',
-    navCubeSettings,
-    plugins,
-    components,
-    isDev = false,
-    debug = false,
-    onUpdateXY = noop,
-    onSelectEntity = noop,
-    onUnselectEntity,
-  }) => {
-    const [isDevPanelVisible, setIsDevPanelVisible] = useState(false);
-    const lineCanvas = useRef<HTMLCanvasElement>(null);
-    const bimCanvas = useRef<HTMLCanvasElement>(null);
-    const viewer = useRef<Viewer>();
-    const modelLoader = useRef<InstanceType<typeof LoaderPlugin>>();
-    const bcfViewpointsPlugin = useRef<BCFViewpointsPlugin>();
-
-    useEffect(() => {
-      return () => {
-        if (viewer.current) {
-          viewer.current.destroy();
-        }
-      };
-    }, []);
-
-    const setUpViewer = useCallback(() => {
-      viewer.current = new Viewer({
-        canvasId: canvasID,
-        saoEnabled: true,
-      });
-      viewer.current.scene.pointsMaterial.roundPoints = false;
-    }, [canvasID]);
-
-    const initializeModelLoader = useCallback(() => {
-      modelLoader.current = new LoaderPlugin(viewer.current, {
-        objectDefaults: IFC_DEFAULTS,
-        maxGeometryBatchSize: 50000000,
-      });
-    }, []);
-
-    const setCamera = useCallback(() => {
-      const cam = viewer.current?.camera as Camera;
-      if (cam) {
-        cam.on('matrix', (e: number[]) => {
-          const bimCtx = lineCanvas.current?.getContext('2d');
-          values(viewer.current?.scene.highlightedObjects).forEach((ett: Entity) => {
-            const center = getAABBCenter(ett.aabb);
-            if (bimCtx) {
-              if (debug) drawAABB(bimCtx, [...e], [...ett.aabb]);
-            }
-            const [x, y] = get2dFrom3d(width, height, [...e], center);
-            // TODO: Batch this update
-            onUpdateXY(ett.id, { x, y });
-          });
-        });
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debug, height, width]);
-
-    const setBCFViewpoints = useCallback(() => {
-      bcfViewpointsPlugin.current?.setViewpoint(bcfViewpoint);
-    }, [bcfViewpoint]);
-
-    const loadModels = useCallback(async () => {
-      const entities = models.map((model) => {
-        const m = modelLoader.current?.load({
-          ...model,
-          edges: true,
-          performance: false,
-          excludeUnclassifiedObjects: true,
-        }) as ModelEntity;
-
-        return m;
-      });
-      await Promise.all(
-        entities.map((model) => new Promise((resolve) => model.on('loaded', resolve))),
-      );
-    }, [models]);
-
-    const loadPlugins = useCallback(() => {
-      forEach(plugins, (plugin) => {
-        const [, ...restArgs] = plugin.args || [];
-        new plugin.plugin(viewer.current, ...restArgs);
-      });
-
-      forEach(components, (component) => {
-        const [, ...restArgs] = component.args || [];
-        new component.component(viewer.current?.scene, ...restArgs);
-      });
-
-      new FastNavPlugin(viewer.current, {});
-      new BCFViewpointsPlugin(viewer.current, {});
-      isDev &&
-        new TreeViewPlugin(viewer.current, {
-          containerElement: document.getElementById('treeViewContainer'),
-        });
-    }, [components, isDev, plugins]);
-
-    const getAABBCenter2DPosition = useCallback(
-      (center: number[]) => {
-        return get2dFrom3d(
-          width,
-          height,
-          [...(viewer.current?.camera as Camera).viewMatrix],
-          center,
-        );
+): ForwardRefExoticComponent<ViewerProps & RefAttributes<ModelViewerRef>> => {
+  const ModelViewer = forwardRef<ModelViewerRef, ViewerProps>(
+    (
+      {
+        canvasID,
+        width,
+        height,
+        models,
+        bcfViewpoint,
+        eventToPickOn = 'mouseclicked',
+        navCubeSettings,
+        isDev = false,
+        debug = false,
+        onUpdateXY = noop,
+        onSelectEntity = noop,
+        onUnselectEntity,
+        onLoad,
       },
-      [height, width],
-    );
+      ref,
+    ) => {
+      const [isDevPanelVisible, setIsDevPanelVisible] = useState(false);
+      const lineCanvas = useRef<HTMLCanvasElement>(null);
+      const bimCanvas = useRef<HTMLCanvasElement>(null);
+      const viewer = useRef<Viewer>();
+      const modelLoader = useRef<InstanceType<typeof LoaderPlugin>>();
+      const bcfViewpointsPlugin = useRef<BCFViewpointsPlugin>();
 
-    const pickEntity = useCallback(() => {
-      const scene = viewer.current?.scene;
-      scene?.input.on(eventToPickOn, (coords: [number, number]) => {
-        const hit = scene.pick({
-          canvasPos: coords,
+      useEffect(() => {
+        return () => {
+          if (viewer.current) {
+            viewer.current.destroy();
+          }
+        };
+      }, []);
+
+      useImperativeHandle(ref, () => ({
+        getViewer: () => viewer.current,
+      }));
+
+      const setUpViewer = useCallback(() => {
+        viewer.current = new Viewer({
+          canvasId: canvasID,
+          saoEnabled: true,
+        });
+        viewer.current.scene.pointsMaterial.roundPoints = false;
+      }, [canvasID]);
+
+      const initializeModelLoader = useCallback(() => {
+        modelLoader.current = new LoaderPlugin(viewer.current, {
+          objectDefaults: IFC_DEFAULTS,
+          maxGeometryBatchSize: 50000000,
+        });
+      }, []);
+
+      const setCamera = useCallback(() => {
+        const cam = viewer.current?.camera as Camera;
+        if (cam) {
+          cam.on('matrix', (e: number[]) => {
+            const bimCtx = lineCanvas.current?.getContext('2d');
+            values(viewer.current?.scene.highlightedObjects).forEach((ett: Entity) => {
+              const center = getAABBCenter(ett.aabb);
+              if (bimCtx) {
+                if (debug) drawAABB(bimCtx, [...e], [...ett.aabb]);
+              }
+              const [x, y] = get2dFrom3d(width, height, [...e], center);
+              // TODO: Batch this update
+              onUpdateXY(ett.id, { x, y });
+            });
+          });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [debug, height, width]);
+
+      const setBCFViewpoints = useCallback(() => {
+        bcfViewpointsPlugin.current?.setViewpoint(bcfViewpoint);
+      }, [bcfViewpoint]);
+
+      const loadModels = useCallback(async () => {
+        const entities = models.map((model) => {
+          const m = modelLoader.current?.load({
+            ...model,
+            edges: true,
+            performance: false,
+            excludeUnclassifiedObjects: true,
+          }) as ModelEntity;
+
+          return m;
+        });
+        await Promise.all(
+          entities.map((model) => new Promise((resolve) => model.on('loaded', resolve))),
+        );
+      }, [models]);
+
+      const loadPlugins = useCallback(() => {
+        new FastNavPlugin(viewer.current, {});
+        new BCFViewpointsPlugin(viewer.current, {});
+        isDev &&
+          new TreeViewPlugin(viewer.current, {
+            containerElement: document.getElementById('treeViewContainer'),
+          });
+      }, [isDev]);
+
+      const getAABBCenter2DPosition = useCallback(
+        (center: number[]) => {
+          return get2dFrom3d(
+            width,
+            height,
+            [...(viewer.current?.camera as Camera).viewMatrix],
+            center,
+          );
+        },
+        [height, width],
+      );
+
+      const pickEntity = useCallback(() => {
+        const scene = viewer.current?.scene;
+        scene?.input.on(eventToPickOn, (coords: [number, number]) => {
+          const hit = scene.pick({
+            canvasPos: coords,
+          });
+
+          if (hit) {
+            const ett = hit.entity as Entity;
+            if (!ett.highlighted) {
+              ett.highlighted = true;
+              const aabb = ett.aabb;
+              const center = getAABBCenter(aabb);
+              const [x, y] = getAABBCenter2DPosition(center);
+
+              const num = viewer.current?.scene.highlightedObjectIds.length ?? 0;
+              onSelectEntity(ett.id, { x: 100 + num * 20, y: 100 + num * 20 }, { x, y });
+            } else {
+              onUnselectEntity?.(`${ett.id}`);
+              ett.highlighted = false;
+            }
+          }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [debug, eventToPickOn, height, width]);
+
+      useEffect(() => {
+        (async () => {
+          setUpViewer();
+          initializeModelLoader();
+          loadPlugins();
+          loadModels();
+          setCamera();
+          if (bcfViewpoint) setBCFViewpoints();
+          pickEntity();
+          onLoad?.(viewer.current);
+        })();
+      }, [
+        bcfViewpoint,
+        initializeModelLoader,
+        loadModels,
+        loadPlugins,
+        onLoad,
+        pickEntity,
+        setBCFViewpoints,
+        setCamera,
+        setUpViewer,
+      ]);
+
+      const toggleDevPanel = useCallback(() => {
+        setIsDevPanelVisible((prev) => !prev);
+      }, []);
+
+      const downloadBCF = useCallback(() => {
+        const viewpoint = bcfViewpointsPlugin.current?.getViewpoint({
+          // Options
+          spacesVisible: true, // Don't force IfcSpace types visible in viewpoint (default)
+          spaceBoundariesVisible: true, // Don't show IfcSpace boundaries in viewpoint (default)
+          openingsVisible: false, // Don't force IfcOpening types visible in viewpoint (default)
         });
 
-        if (hit) {
-          const ett = hit.entity as Entity;
-          if (!ett.highlighted) {
-            ett.highlighted = true;
-            const aabb = ett.aabb;
-            const center = getAABBCenter(aabb);
-            const [x, y] = getAABBCenter2DPosition(center);
+        const viewpointStr = JSON.stringify(viewpoint, null, 2);
 
-            const num = viewer.current?.scene.highlightedObjectIds.length ?? 0;
-            onSelectEntity(ett.id, { x: 100 + num * 20, y: 100 + num * 20 }, { x, y });
-          } else {
-            onUnselectEntity?.(`${ett.id}`);
-            ett.highlighted = false;
-          }
-        }
-      });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debug, eventToPickOn, height, width]);
+        const link = document.createElement('a');
+        link.setAttribute(
+          'href',
+          'data:text/plain;charset=utf-8,' + encodeURIComponent(viewpointStr),
+        );
+        link.setAttribute('download', 'bcfViewpoint.json');
+        link.click();
+      }, []);
 
-    useEffect(() => {
-      (async () => {
-        setUpViewer();
-        initializeModelLoader();
-        loadPlugins();
-        loadModels();
-        setCamera();
-        if (bcfViewpoint) setBCFViewpoints();
-        pickEntity();
-      })();
-    }, [
-      bcfViewpoint,
-      initializeModelLoader,
-      loadModels,
-      loadPlugins,
-      pickEntity,
-      setBCFViewpoints,
-      setCamera,
-      setUpViewer,
-    ]);
+      return (
+        <Container width={width} height={height}>
+          <canvas ref={bimCanvas} id={canvasID} width={width} height={height} />
+          {navCubeSettings ? (
+            <canvas
+              style={{
+                position: 'absolute',
+                right: 0,
+                bottom: 0,
+              }}
+              id={navCubeSettings.canvasId}
+              width={navCubeSettings.canvasWidth}
+              height={navCubeSettings.canvasHeight}
+            />
+          ) : null}
 
-    const toggleDevPanel = useCallback(() => {
-      setIsDevPanelVisible((prev) => !prev);
-    }, []);
-
-    const downloadBCF = useCallback(() => {
-      const viewpoint = bcfViewpointsPlugin.current?.getViewpoint({
-        // Options
-        spacesVisible: true, // Don't force IfcSpace types visible in viewpoint (default)
-        spaceBoundariesVisible: true, // Don't show IfcSpace boundaries in viewpoint (default)
-        openingsVisible: false, // Don't force IfcOpening types visible in viewpoint (default)
-      });
-
-      const viewpointStr = JSON.stringify(viewpoint, null, 2);
-
-      const link = document.createElement('a');
-      link.setAttribute(
-        'href',
-        'data:text/plain;charset=utf-8,' + encodeURIComponent(viewpointStr),
+          {isDev && (
+            <>
+              <DevPanel isDevPanelVisible={isDevPanelVisible}>
+                <TreeViewContainer id="treeViewContainer" />
+                <Buttons>
+                  <IconButton onClick={downloadBCF}>
+                    <SaveIcon />
+                  </IconButton>
+                </Buttons>
+              </DevPanel>
+              <IconButton
+                onClick={toggleDevPanel}
+                style={{ position: 'absolute', left: 10, top: 10 }}
+              >
+                {isDevPanelVisible ? <CloseIcon /> : <MenuIcon />}
+              </IconButton>
+            </>
+          )}
+        </Container>
       );
-      link.setAttribute('download', 'bcfViewpoint.json');
-      link.click();
-    }, []);
-
-    return (
-      <Container width={width} height={height}>
-        <canvas ref={bimCanvas} id={canvasID} width={width} height={height} />
-        {navCubeSettings ? (
-          <canvas
-            style={{
-              position: 'absolute',
-              right: 0,
-              bottom: 0,
-            }}
-            id={navCubeSettings.canvasId}
-            width={navCubeSettings.canvasWidth}
-            height={navCubeSettings.canvasHeight}
-          />
-        ) : null}
-
-        {isDev && (
-          <>
-            <DevPanel isDevPanelVisible={isDevPanelVisible}>
-              <TreeViewContainer id="treeViewContainer" />
-              <Buttons>
-                <IconButton onClick={downloadBCF}>
-                  <SaveIcon />
-                </IconButton>
-              </Buttons>
-            </DevPanel>
-            <IconButton
-              onClick={toggleDevPanel}
-              style={{ position: 'absolute', left: 10, top: 10 }}
-            >
-              {isDevPanelVisible ? <CloseIcon /> : <MenuIcon />}
-            </IconButton>
-          </>
-        )}
-      </Container>
-    );
-  };
+    },
+  );
 
   return ModelViewer;
 };

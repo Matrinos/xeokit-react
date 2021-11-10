@@ -1,5 +1,7 @@
 import { ComponentMeta, ComponentStory } from '@storybook/react';
-import React from 'react';
+import { SectionPlanesPlugin, Viewer } from '@tuxmart/xeokit-sdk';
+import React, { useCallback, useRef } from 'react';
+import { ModelViewerRef } from '../Viewer';
 import { XKTViewer } from '../Viewers';
 
 export default {
@@ -11,7 +13,18 @@ export default {
 } as ComponentMeta<typeof XKTViewer>;
 
 const Template: ComponentStory<typeof XKTViewer> = (args) => {
-  return <XKTViewer {...args} />;
+  const ref = useRef<ModelViewerRef>();
+
+  const onLoad = useCallback((viewer?: Viewer) => {
+    const sectionPlane = new SectionPlanesPlugin(viewer);
+    sectionPlane.createSectionPlane({
+      id: 'demo',
+      pos: viewer.scene.center,
+      dir: [-1, 0, 0],
+    });
+  }, []);
+
+  return <XKTViewer ref={ref} {...args} onLoad={onLoad} />;
 };
 
 export const Primary = Template.bind({});
@@ -45,7 +58,6 @@ Primary.args = {
   enableScreenshot: true,
   isDev: true,
 };
-
 
 export const Vertical = Template.bind({});
 
