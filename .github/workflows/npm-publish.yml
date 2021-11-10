@@ -23,8 +23,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-
 
-      - uses: pnpm/action-setup@v2.0.1
+      - uses: pnpm/action-setup@v2
         with:
+          version: 6
           run_install: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
