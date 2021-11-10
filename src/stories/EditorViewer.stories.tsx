@@ -1,17 +1,17 @@
 import { ComponentMeta, ComponentStory } from '@storybook/react';
 import React from 'react';
-import { XKTViewer } from '../Viewers';
+import { EditorViewer } from '../EditorViewer';
 
 export default {
-  title: 'Viewer/XKTViewer',
-  component: XKTViewer,
+  title: 'Viewer/XKTEditorViewer',
+  component: EditorViewer,
   argTypes: {
     backgroundColor: { control: 'color' },
   },
-} as ComponentMeta<typeof XKTViewer>;
+} as ComponentMeta<typeof EditorViewer>;
 
-const Template: ComponentStory<typeof XKTViewer> = (args) => {
-  return <XKTViewer {...args} />;
+const Template: ComponentStory<typeof EditorViewer> = (args) => {
+  return <EditorViewer {...args} />;
 };
 
 export const Primary = Template.bind({});
