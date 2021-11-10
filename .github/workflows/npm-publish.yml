@@ -15,9 +15,6 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Cache pnpm modules
         uses: actions/cache@v2
         with:
@@ -35,6 +32,6 @@ jobs:
       - name: Build
         run: pnpm build
       - name: Publish Package
-        run: pnpm publish
+        run: pnpm publish --git-checks false
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
