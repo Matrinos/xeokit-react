@@ -3,7 +3,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
 import { IconButton } from '@mui/material';
-import { Point2D } from '@tuxmart/ui';
 import {
   BCFViewpointsPlugin,
   Entity,
@@ -33,9 +32,12 @@ interface NavCubeSettingsItem {
   canvasHeight?: number;
 }
 
-interface Point3D {
+interface Point2D {
   x: number;
   y: number;
+}
+
+interface Point3D extends Point2D {
   z: number;
 }
 
