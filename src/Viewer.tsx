@@ -1,14 +1,8 @@
 import styled from '@emotion/styled';
-import CloseIcon from '@mui/icons-material/Close';
-import MenuIcon from '@mui/icons-material/Menu';
-import SaveIcon from '@mui/icons-material/Save';
-import { IconButton } from '@mui/material';
 import {
   BCFViewpointsPlugin,
   Entity,
-  FastNavPlugin,
   GLTFLoaderPlugin,
-  TreeViewPlugin,
   Viewer,
   XKTLoaderPlugin,
 } from '@tuxmart/xeokit-sdk';
@@ -22,9 +16,7 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
 } from 'react';
-import { IFC_DEFAULTS } from './config';
 import { drawAABB, get2dFrom3d, getAABBCenter } from './utils';
 
 interface Model {
@@ -33,12 +25,6 @@ interface Model {
   metaModelSrc?: string;
   edges?: boolean;
   performance?: boolean;
-}
-
-interface NavCubeSettingsItem {
-  canvasId: string;
-  canvasWidth?: number;
-  canvasHeight?: number;
 }
 
 interface Point2D {
@@ -99,18 +85,14 @@ export interface ViewerProps {
   canvasID: string;
   width: number;
   height: number;
-  camera?: Camera;
   models: Model[];
   bcfViewpoint?: BCFViewpointsJSON;
   eventToPickOn?: string;
-  navCubeSettings?: NavCubeSettingsItem;
-  isDev?: boolean;
-  overlay?: JSX.Element;
-  debug?: boolean;
   onUpdateXY?: (id: string, pt: Point2D) => void;
   onSelectEntity?: (id: string, source: Point2D, destination: Point2D) => void;
   onUnselectEntity?: (id: string) => void;
   onLoad?: (viewer?: Viewer) => void;
+  isDev?: boolean;
 }
 
 interface ModelEntity extends Entity {
@@ -133,17 +115,14 @@ export const makeViewer = (
         models,
         bcfViewpoint,
         eventToPickOn = 'mouseclicked',
-        navCubeSettings,
-        isDev = false,
-        debug = false,
         onUpdateXY = noop,
         onSelectEntity = noop,
         onUnselectEntity,
         onLoad,
+        isDev = false,
       },
       ref,
     ) => {
-      const [isDevPanelVisible, setIsDevPanelVisible] = useState(false);
       const lineCanvas = useRef<HTMLCanvasElement>(null);
       const bimCanvas = useRef<HTMLCanvasElement>(null);
       const viewer = useRef<Viewer>();
@@ -172,7 +151,6 @@ export const makeViewer = (
 
       const initializeModelLoader = useCallback(() => {
         modelLoader.current = new LoaderPlugin(viewer.current, {
-          objectDefaults: IFC_DEFAULTS,
           maxGeometryBatchSize: 50000000,
         });
       }, []);
@@ -185,7 +163,7 @@ export const makeViewer = (
             values(viewer.current?.scene.highlightedObjects).forEach((ett: Entity) => {
               const center = getAABBCenter(ett.aabb);
               if (bimCtx) {
-                if (debug) drawAABB(bimCtx, [...e], [...ett.aabb]);
+                if (isDev) drawAABB(bimCtx, [...e], [...ett.aabb]);
               }
               const [x, y] = get2dFrom3d(width, height, [...e], center);
               // TODO: Batch this update
@@ -194,36 +172,32 @@ export const makeViewer = (
           });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [debug, height, width]);
+      }, [isDev, height, width]);
 
-      const setBCFViewpoints = useCallback(() => {
-        bcfViewpointsPlugin.current?.setViewpoint(bcfViewpoint);
-      }, [bcfViewpoint]);
+      const setBCFViewpoints = useCallback((bcf) => {
+        bcfViewpointsPlugin.current?.setViewpoint(bcf);
+      }, []);
 
-      const loadModels = useCallback(async () => {
-        const entities = models.map((model) => {
-          const m = modelLoader.current?.load({
+      const loadModel = useCallback(
+        (model: Model) =>
+          modelLoader.current?.load({
             ...model,
             edges: true,
             performance: false,
             excludeUnclassifiedObjects: true,
-          }) as ModelEntity;
+          }) as ModelEntity,
+        [],
+      );
 
-          return m;
-        });
-        await Promise.all(
-          entities.map((model) => new Promise((resolve) => model.on('loaded', resolve))),
-        );
-      }, [models]);
-
-      const loadPlugins = useCallback(() => {
-        new FastNavPlugin(viewer.current, {});
-        new BCFViewpointsPlugin(viewer.current, {});
-        isDev &&
-          new TreeViewPlugin(viewer.current, {
-            containerElement: document.getElementById('treeViewContainer'),
-          });
-      }, [isDev]);
+      const loadModels = useCallback(
+        async (_models: Model[]) => {
+          const entities = _models.map(loadModel);
+          await Promise.all(
+            entities.map((model) => new Promise((resolve) => model.on('loaded', resolve))),
+          );
+        },
+        [loadModel],
+      );
 
       const getAABBCenter2DPosition = useCallback(
         (center: number[]) => {
@@ -260,17 +234,15 @@ export const makeViewer = (
             }
           }
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [debug, eventToPickOn, height, width]);
+      }, [eventToPickOn, getAABBCenter2DPosition, onSelectEntity, onUnselectEntity]);
 
       useEffect(() => {
         (async () => {
           setUpViewer();
           initializeModelLoader();
-          loadPlugins();
-          loadModels();
+          await loadModels(models);
+          if (bcfViewpoint) setBCFViewpoints(bcfViewpoint);
           setCamera();
-          if (bcfViewpoint) setBCFViewpoints();
           pickEntity();
           onLoad?.(viewer.current);
         })();
@@ -278,7 +250,7 @@ export const makeViewer = (
         bcfViewpoint,
         initializeModelLoader,
         loadModels,
-        loadPlugins,
+        models,
         onLoad,
         pickEntity,
         setBCFViewpoints,
@@ -286,63 +258,9 @@ export const makeViewer = (
         setUpViewer,
       ]);
 
-      const toggleDevPanel = useCallback(() => {
-        setIsDevPanelVisible((prev) => !prev);
-      }, []);
-
-      const downloadBCF = useCallback(() => {
-        const viewpoint = bcfViewpointsPlugin.current?.getViewpoint({
-          // Options
-          spacesVisible: true, // Don't force IfcSpace types visible in viewpoint (default)
-          spaceBoundariesVisible: true, // Don't show IfcSpace boundaries in viewpoint (default)
-          openingsVisible: false, // Don't force IfcOpening types visible in viewpoint (default)
-        });
-
-        const viewpointStr = JSON.stringify(viewpoint, null, 2);
-
-        const link = document.createElement('a');
-        link.setAttribute(
-          'href',
-          'data:text/plain;charset=utf-8,' + encodeURIComponent(viewpointStr),
-        );
-        link.setAttribute('download', 'bcfViewpoint.json');
-        link.click();
-      }, []);
-
       return (
         <Container width={width} height={height}>
           <canvas ref={bimCanvas} id={canvasID} width={width} height={height} />
-          {navCubeSettings ? (
-            <canvas
-              style={{
-                position: 'absolute',
-                right: 0,
-                bottom: 0,
-              }}
-              id={navCubeSettings.canvasId}
-              width={navCubeSettings.canvasWidth}
-              height={navCubeSettings.canvasHeight}
-            />
-          ) : null}
-
-          {isDev && (
-            <>
-              <DevPanel isDevPanelVisible={isDevPanelVisible}>
-                <TreeViewContainer id="treeViewContainer" />
-                <Buttons>
-                  <IconButton onClick={downloadBCF}>
-                    <SaveIcon />
-                  </IconButton>
-                </Buttons>
-              </DevPanel>
-              <IconButton
-                onClick={toggleDevPanel}
-                style={{ position: 'absolute', left: 10, top: 10 }}
-              >
-                {isDevPanelVisible ? <CloseIcon /> : <MenuIcon />}
-              </IconButton>
-            </>
-          )}
         </Container>
       );
     },
@@ -350,49 +268,6 @@ export const makeViewer = (
 
   return ModelViewer;
 };
-
-const DevPanel = styled.div<{ isDevPanelVisible: boolean }>`
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: #fff9;
-  backdrop-filter: blur(15px);
-  opacity: ${({ isDevPanelVisible }) => (isDevPanelVisible ? 1 : 0)};
-  margin-left: ${({ isDevPanelVisible }) => (isDevPanelVisible ? 0 : -500)}px;
-  transition: all 0.5s ease-in-out;
-  padding: 30px 10px 10px 10px;
-  box-sizing: border-box;
-  border-radius: 0;
-`;
-
-const Buttons = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-`;
-
-const TreeViewContainer = styled.div`
-  flex: 1;
-  overflow: auto;
-  width: 400px;
-  ::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
-
-  a.plus,
-  a.minus {
-    width: 10px;
-    display: inline-block;
-  }
-
-  ul {
-    list-style: none;
-    padding: 0 0 0 20px;
-  }
-`;
 
 const Container = styled.div<{
   width: number;
