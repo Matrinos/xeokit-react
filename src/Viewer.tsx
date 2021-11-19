@@ -19,13 +19,22 @@ import {
 } from 'react';
 import { drawAABB, get2dFrom3d, getAABBCenter } from './utils';
 
-interface Model {
+interface ModelBase {
   id: string;
-  src: string;
   metaModelSrc?: string;
   edges?: boolean;
   performance?: boolean;
 }
+
+type Model =
+  | (ModelBase & {
+      src: string;
+      xkt?: never;
+    })
+  | {
+      src?: never;
+      xkt: ArrayBuffer;
+    };
 
 interface Point2D {
   x: number;
