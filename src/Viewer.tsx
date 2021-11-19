@@ -26,7 +26,7 @@ interface ModelBase {
   performance?: boolean;
 }
 
-type Model =
+export type Model =
   | (ModelBase & {
       src: string;
       xkt?: never;
