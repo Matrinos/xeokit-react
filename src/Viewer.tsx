@@ -4,7 +4,7 @@ import {
   Entity,
   GLTFLoaderPlugin,
   Viewer,
-  XKTLoaderPlugin,
+  XKTLoaderPlugin
 } from '@tuxmart/xeokit-sdk';
 import { Camera } from '@tuxmart/xeokit-sdk/viewer/scene/camera/Camera';
 import { noop, values } from 'lodash';
@@ -15,7 +15,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useRef,
+  useRef
 } from 'react';
 import { drawAABB, get2dFrom3d, getAABBCenter } from './utils';
 
@@ -96,10 +96,7 @@ export interface ViewerProps {
   height: number;
   models: Model[];
   bcfViewpoint?: BCFViewpointsJSON;
-  eventToPickOn?: string;
   onUpdateXY?: (id: string, pt: Point2D) => void;
-  onSelectEntity?: (id: string, source: Point2D, destination: Point2D) => void;
-  onUnselectEntity?: (id: string) => void;
   onLoad?: (viewer?: Viewer) => void;
   isDev?: boolean;
 }
@@ -117,19 +114,7 @@ export const makeViewer = (
 ): ForwardRefExoticComponent<ViewerProps & RefAttributes<ModelViewerRef>> => {
   const ModelViewer = forwardRef<ModelViewerRef, ViewerProps>(
     (
-      {
-        canvasID,
-        width,
-        height,
-        models,
-        bcfViewpoint,
-        eventToPickOn = 'mouseclicked',
-        onUpdateXY = noop,
-        onSelectEntity = noop,
-        onUnselectEntity,
-        onLoad,
-        isDev = false,
-      },
+      { canvasID, width, height, models, bcfViewpoint, onUpdateXY = noop, onLoad, isDev = false },
       ref,
     ) => {
       const lineCanvas = useRef<HTMLCanvasElement>(null);
@@ -190,10 +175,10 @@ export const makeViewer = (
       const loadModel = useCallback(
         (model: Model) =>
           modelLoader.current?.load({
-            ...model,
             edges: true,
-            performance: false,
+            performance: true,
             excludeUnclassifiedObjects: true,
+            ...model,
           }) as ModelEntity,
         [],
       );
@@ -208,43 +193,6 @@ export const makeViewer = (
         [loadModel],
       );
 
-      const getAABBCenter2DPosition = useCallback(
-        (center: number[]) => {
-          return get2dFrom3d(
-            width,
-            height,
-            [...(viewer.current?.camera as Camera).viewMatrix],
-            center,
-          );
-        },
-        [height, width],
-      );
-
-      const pickEntity = useCallback(() => {
-        const scene = viewer.current?.scene;
-        scene?.input.on(eventToPickOn, (coords: [number, number]) => {
-          const hit = scene.pick({
-            canvasPos: coords,
-          });
-
-          if (hit) {
-            const ett = hit.entity as Entity;
-            if (!ett.highlighted) {
-              ett.highlighted = true;
-              const aabb = ett.aabb;
-              const center = getAABBCenter(aabb);
-              const [x, y] = getAABBCenter2DPosition(center);
-
-              const num = viewer.current?.scene.highlightedObjectIds.length ?? 0;
-              onSelectEntity(ett.id, { x: 100 + num * 20, y: 100 + num * 20 }, { x, y });
-            } else {
-              onUnselectEntity?.(`${ett.id}`);
-              ett.highlighted = false;
-            }
-          }
-        });
-      }, [eventToPickOn, getAABBCenter2DPosition, onSelectEntity, onUnselectEntity]);
-
       useEffect(() => {
         (async () => {
           setUpViewer();
@@ -252,7 +200,6 @@ export const makeViewer = (
           await loadModels(models);
           if (bcfViewpoint) setBCFViewpoints(bcfViewpoint);
           setCamera();
-          pickEntity();
           onLoad?.(viewer.current);
         })();
       }, [
@@ -261,7 +208,6 @@ export const makeViewer = (
         loadModels,
         models,
         onLoad,
-        pickEntity,
         setBCFViewpoints,
         setCamera,
         setUpViewer,

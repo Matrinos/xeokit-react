@@ -1,0 +1,1 @@
+export { HighlightOnClickPlugin } from './HighlightOnClickPlugin';
