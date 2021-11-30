@@ -4,18 +4,19 @@ import {
   Entity,
   GLTFLoaderPlugin,
   Viewer,
-  XKTLoaderPlugin
+  XKTLoaderPlugin,
 } from '@tuxmart/xeokit-sdk';
 import { Camera } from '@tuxmart/xeokit-sdk/viewer/scene/camera/Camera';
 import { noop, values } from 'lodash';
 import {
+  CSSProperties,
   forwardRef,
   ForwardRefExoticComponent,
   RefAttributes,
   useCallback,
   useEffect,
   useImperativeHandle,
-  useRef
+  useRef,
 } from 'react';
 import { drawAABB, get2dFrom3d, getAABBCenter } from './utils';
 
@@ -99,6 +100,7 @@ export interface ViewerProps {
   onUpdateXY?: (id: string, pt: Point2D) => void;
   onLoad?: (viewer?: Viewer) => void;
   isDev?: boolean;
+  style?: CSSProperties;
 }
 
 interface ModelEntity extends Entity {
@@ -114,7 +116,17 @@ export const makeViewer = (
 ): ForwardRefExoticComponent<ViewerProps & RefAttributes<ModelViewerRef>> => {
   const ModelViewer = forwardRef<ModelViewerRef, ViewerProps>(
     (
-      { canvasID, width, height, models, bcfViewpoint, onUpdateXY = noop, onLoad, isDev = false },
+      {
+        canvasID,
+        width,
+        height,
+        models,
+        bcfViewpoint,
+        onUpdateXY = noop,
+        onLoad,
+        isDev = false,
+        style,
+      },
       ref,
     ) => {
       const lineCanvas = useRef<HTMLCanvasElement>(null);
@@ -214,7 +226,7 @@ export const makeViewer = (
       ]);
 
       return (
-        <Container width={width} height={height}>
+        <Container style={style} width={width} height={height}>
           <canvas ref={bimCanvas} id={canvasID} width={width} height={height} />
         </Container>
       );
@@ -232,6 +244,5 @@ const Container = styled.div<{
   width: ${({ width }) => width}px;
   height: ${({ height }) => height}px;
   position: relative;
-  background: linear-gradient(rgb(39, 120, 187), rgb(151, 193, 219));
   overflow: hidden;
 `;
