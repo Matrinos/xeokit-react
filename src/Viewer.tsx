@@ -95,7 +95,7 @@ export interface ViewerProps {
   canvasID: string;
   width: number;
   height: number;
-  models: Model[];
+  models?: Model[];
   bcfViewpoint?: BCFViewpointsJSON;
   onUpdateXY?: (id: string, pt: Point2D) => void;
   onLoad?: (viewer?: Viewer) => void;
@@ -209,8 +209,8 @@ export const makeViewer = (
         (async () => {
           setUpViewer();
           initializeModelLoader();
-          await loadModels(models);
-          if (bcfViewpoint) setBCFViewpoints(bcfViewpoint);
+          models && (await loadModels(models));
+          bcfViewpoint && setBCFViewpoints(bcfViewpoint);
           setCamera();
           onLoad?.(viewer.current);
         })();

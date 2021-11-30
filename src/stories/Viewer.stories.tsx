@@ -10,11 +10,7 @@ export default {
 } as ComponentMeta<typeof XKTViewer>;
 
 const Template: ComponentStory<typeof XKTViewer> = (args) => {
-  const onLoad = useCallback((viewer?: Viewer) => {
-    new FastNavPlugin(viewer);
-  }, []);
-
-  return <XKTViewer {...args} onLoad={onLoad} />;
+  return <XKTViewer {...args} />;
 };
 
 export const Primary = Template.bind({});
