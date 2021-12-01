@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name */
 import styled from '@emotion/styled';
 import {
   BCFViewpointsPlugin,
@@ -98,7 +99,7 @@ export interface ViewerProps {
   models?: Model[];
   bcfViewpoint?: BCFViewpointsJSON;
   onUpdateXY?: (id: string, pt: Point2D) => void;
-  onLoad?: (viewer?: Viewer) => void;
+  onLoad?: (viewer: Viewer) => void;
   isDev?: boolean;
   style?: CSSProperties;
 }
@@ -212,7 +213,7 @@ export const makeViewer = (
           models && (await loadModels(models));
           bcfViewpoint && setBCFViewpoints(bcfViewpoint);
           setCamera();
-          onLoad?.(viewer.current);
+          onLoad?.(viewer.current!);
         })();
       }, [
         bcfViewpoint,
