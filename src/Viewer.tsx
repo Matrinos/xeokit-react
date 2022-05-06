@@ -181,7 +181,7 @@ export const makeViewer = (
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [isDev, height, width]);
 
-      const setBCFViewpoints = useCallback((bcf) => {
+      const setBCFViewpoints = useCallback((bcf: any) => {
         bcfViewpointsPlugin.current?.setViewpoint(bcf);
       }, []);
 
