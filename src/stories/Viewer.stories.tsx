@@ -1,15 +1,14 @@
-import { ComponentMeta, ComponentStory } from '@storybook/react';
-import { FastNavPlugin, Viewer } from '@tuxmart/xeokit-sdk';
-import React, { useCallback } from 'react';
+import { Meta, StoryFn } from '@storybook/react';
+import React from 'react';
 import { XKTViewer } from '../Viewers';
 
 export default {
   title: 'Viewer/XKTViewer',
   component: XKTViewer,
   argTypes: {},
-} as ComponentMeta<typeof XKTViewer>;
+} as Meta<typeof XKTViewer>;
 
-const Template: ComponentStory<typeof XKTViewer> = (args) => {
+const Template: StoryFn<typeof XKTViewer> = (args) => {
   return <XKTViewer {...args} />;
 };
 
@@ -22,19 +21,19 @@ Primary.args = {
   models: [
     {
       id: 'QD-01-A',
-      src: './QD-01-A-R02-210917.xkt',
+      src: 'https://azure-1254421660.cos.ap-nanjing.myqcloud.com/models/v9/QD-01-A-R02-210917.xkt',
       performance: true,
     },
-    {
-      id: 'QD-02-A',
-      src: './QD-02-A.xkt',
-      performance: true,
-    },
-    {
-      id: 'QD-03-A',
-      src: './QD-03-A.xkt',
-      performance: true,
-    },
+    // {
+    //   id: 'QD-02-A',
+    //   src: './QD-02-A.xkt',
+    //   performance: true,
+    // },
+    // {
+    //   id: 'QD-03-A',
+    //   src: './QD-03-A.xkt',
+    //   performance: true,
+    // },
   ],
 };
 
